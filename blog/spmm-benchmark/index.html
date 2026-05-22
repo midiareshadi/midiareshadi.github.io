@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Outer-Product Beats cuSPARSE by 198x — Midia Reshadi</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="floating-toggle" onclick="toggleSidebar()" style="
+        position:fixed; top:1rem; left:1rem; z-index:1000;
+        background:none; border:none; cursor:pointer;
+        padding:4px; color:#D97757; display:none;
+    " title="Show sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+    </button>
+        <aside class="sidebar">
+        <div style="margin-bottom:1.5rem;">
+            <button onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:0; color:#D97757; line-height:1; display:block; margin-bottom:10px;" title="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            </button>
+            <p style="font-size:17px; font-weight:700; color:#D97757; margin:0; white-space:nowrap; font-family:"Playfair Display", Georgia, serif;">&#9998; Midia Reshadi Blog</p>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="../../index.html">&#8962; Home</a></li>
+        </ul>
+        <div class="sidebar-links">
+            <a href="https://github.com/midiareshadi" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+            </a>
+            <a href="https://www.linkedin.com/in/midia-reshadi/" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                LinkedIn
+            </a>
+            <a href="https://scholar.google.com/citations?user=gVWj19kAAAAJ&hl=en" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+                Google Scholar
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <article>
+            <header class="post-header">
+                <h1>Why Outer-Product Beats Vendor Sparse Libraries by up to 198x for LLM Attention Sparsity</h1>
+                <p class="post-meta">May 2026 &middot; 8 min read &middot;
+                    <a href="https://github.com/midiareshadi/dataflow-bench">code</a>
+                </p>
+            </header>
+
+            <div class="post-content">
+
+                <p>
+                    I benchmarked three sparse SpMSpM algorithms — inner-product,
+                    outer-product, and Gustavson's algorithm — against vendor-optimized
+                    libraries, namely cuSPARSE on NVIDIA T4 and rocSPARSE on AMD MI300x,
+                    using LLM-realistic top-k attention sparsity. The results surprised me:
+                    all three Triton implementations outperformed the vendor libraries in
+                    every test case, with the outer-product approach achieving up to a
+                    <strong>198&times; speedup over rocSPARSE</strong>.
+                </p>
+
+                <p>
+                    This post explains what I benchmarked, what I found, and — most
+                    importantly — why outer-product wins.
+                </p>
+
+                <h2>Background</h2>
+
+                <p>
+                    Modern LLMs exhibit natural sparsity in their attention score matrices.
+                    After softmax, most attention weights are near-zero — only a small
+                    fraction of token pairs carry significant attention mass. This is the
+                    "heavy hitter" phenomenon observed by H2O, SnapKV, and StreamingLLM.
+                    Exploiting this sparsity requires efficient sparse matrix multiplication
+                    (SpMSpM) kernels.
+                </p>
+
+                <p>
+                    The GAMMA paper (Günnemann et al.) analyzes inner-product, outer-product,
+                    and Gustavson's algorithms for SpMSpM on hardware accelerators. My work extends this to
+                    GPU hardware using Triton, and adds a direct comparison against
+                    vendor-optimized sparse libraries.
+                </p>
+
+                <h2>Experimental Setup</h2>
+
+                <h3>Hardware</h3>
+                <table>
+                    <tr><th>Hardware</th><th>Architecture</th><th>Memory</th><th>Peak BW</th></tr>
+                    <tr><td>NVIDIA T4</td><td>Turing, Tensor Cores</td><td>16GB GDDR6</td><td>300 GB/s</td></tr>
+                    <tr><td>AMD MI300x</td><td>CDNA3, Matrix Cores</td><td>192GB HBM3</td><td>5,300 GB/s</td></tr>
+                </table>
+
+                <h3>Workloads</h3>
+                <p>
+                    6 attention score matrix shapes from LLaMA 1-7B — Q×K<sup>T</sup>
+                    and scores×V at sequence lengths 512, 1024, and 2048. Sparsity
+                    levels: 70%, 90%, 95% (top-k per row, LLM-realistic).
+                </p>
+
+                <h3>Algorithms</h3>
+                <table>
+                    <tr><th>Algorithm</th><th>Strategy</th><th>Format</th></tr>
+                    <tr><td>Vendor</td><td>cuSPARSE / rocSPARSE</td><td>CSR</td></tr>
+                    <tr><td>Inner-product</td><td>C[i,j] = dot(A[i,:], B[:,j])</td><td>A: CSR, B: dense</td></tr>
+                    <tr><td>Outer-product</td><td>C += Σ A[:,k] × B[k,:]</td><td>dense tiling + tl.dot</td></tr>
+                    <tr><td>Gustavson</td><td>C[i,:] += A[i,k] * B[k,:]</td><td>A: CSR, B: dense</td></tr>
+                </table>
+
+                <h2>Results</h2>
+
+                <h3>Algorithm comparison</h3>
+
+                <div class="finding-box">
+                    <p>Outer-product wins <strong>36/36 cases</strong> on both T4 and MI300x.
+                    All three Triton algorithms beat vendor on <strong>54/54 cases</strong>.
+                    Maximum speedup: <strong>198x over rocSPARSE</strong> on MI300x at 70% sparsity.</p>
+                </div>
+
+                <div class="figure">
+                    <img src="../../assets/figures/sparse_winner_heatmap.png"
+                         alt="Winning algorithm heatmap across hardware and sparsity levels">
+                    <p class="figure-caption">
+                        Winning algorithm across all shapes, sparsity levels, and hardware.
+                        Outer-product wins every single case.
+                    </p>
+                </div>
+
+                <div class="figure">
+                    <img src="../../assets/figures/fig2_speedup_vs_vendor.png"
+                         alt="Speedup vs vendor baseline at 90% sparsity">
+                    <p class="figure-caption">
+                        Speedup vs vendor baseline at 90% sparsity.
+                        Outer-product achieves 20-40x speedup across all shapes.
+                    </p>
+                </div>
+
+                <h3>Sparsity sensitivity</h3>
+                <p>
+                    Higher sparsity amplifies the advantage. At 70% sparsity,
+                    outer-product achieves a mean 73x speedup over vendor. At 95%,
+                    this narrows to 15x — still very significant.
+                </p>
+
+                <table>
+                    <tr><th>Sparsity</th><th>T4 mean speedup</th><th>MI300x mean speedup</th></tr>
+                    <tr><td>70%</td><td>73.5x</td><td>70.2x</td></tr>
+                    <tr><td>90%</td><td>24.2x</td><td>32.1x</td></tr>
+                    <tr><td>95%</td><td>15.3x</td><td>24.9x</td></tr>
+                </table>
+
+                <h3>GPU reverses the CPU algorithm ranking</h3>
+                <p>
+                    The GAMMA paper found Gustavson outperforms inner-product on tensor accelerators.
+                    On GPU, the two are essentially identical — within 3% of each other
+                    on both T4 and MI300x. Outer-product dominates both on GPU.
+                </p>
+
+                <h2>Why Outer-Product Wins</h2>
+
+                <p>
+                    The performance gap is explained by memory bandwidth utilization.
+                    I measured achieved memory bandwidth for each algorithm:
+                </p>
+
+                <div class="figure">
+                    <img src="../../assets/figures/fig6_bandwidth_utilization.png"
+                         alt="Memory bandwidth utilization per algorithm">
+                    <p class="figure-caption">
+                        Mean achieved memory bandwidth per algorithm.
+                        Outer-product achieves 3.3x higher bandwidth than inner/Gustavson on T4,
+                        and 6.7x higher on MI300x.
+                    </p>
+                </div>
+
+                <table>
+                    <tr><th>Algorithm</th><th>T4 (300 GB/s peak)</th><th>MI300x (5300 GB/s peak)</th></tr>
+                    <tr><td>outer_product</td><td class="highlight">52.5 GB/s (17.5%)</td><td class="highlight">272 GB/s (5.1%)</td></tr>
+                    <tr><td>inner_product</td><td>16.0 GB/s (5.3%)</td><td>40.6 GB/s (0.8%)</td></tr>
+                    <tr><td>gustavson</td><td>16.6 GB/s (5.5%)</td><td>39.6 GB/s (0.7%)</td></tr>
+                    <tr><td>vendor</td><td>1.4 GB/s (0.5%)</td><td>3.6 GB/s (0.1%)</td></tr>
+                </table>
+
+                <p>
+                    The reason is algorithmic. Outer-product processes the computation as:
+                </p>
+
+                <pre><code>C += sum_k outer(A[:,k], B[k,:])  # rank-1 updates via tl.dot()</code></pre>
+
+                <p>
+                    This maps directly to <code>tl.dot()</code> in Triton, which compiles
+                    to Tensor Core (NVIDIA) or Matrix Core (AMD) operations. The memory
+                    access pattern is regular and coalesced — tiles of A and B are loaded
+                    sequentially, accumulated into the output.
+                </p>
+
+                <p>
+                    Inner-product and Gustavson both require gather operations — loading
+                    specific rows of B indexed by sparse column indices of A. This produces
+                    scattered memory loads that cannot leverage Tensor Cores efficiently,
+                    resulting in 3x lower bandwidth utilization.
+                </p>
+
+                <p>
+                    Vendor libraries (cuSPARSE/rocSPARSE) use CSR format and process only
+                    non-zeros — but cannot utilize Tensor Cores for sparse operations,
+                    achieving less than 1% of peak bandwidth.
+                </p>
+
+                <div class="finding-box">
+                    <p><strong>Key insight:</strong> For top-k attention sparsity, outer-product's
+                    regular tiling pattern enables Tensor Core utilization — achieving 3-7x
+                    higher memory bandwidth than gather-based algorithms and 35-140x higher
+                    than vendor CSR kernels.</p>
+                </div>
+
+                <h3>MI300x: compute-bound, not memory-bound</h3>
+                <p>
+                    On MI300x, outer-product achieves 272 GB/s against a 5,300 GB/s peak
+                    — only 5.1% utilization. This doesn't mean the kernel is inefficient.
+                    It means the kernel is <em>compute-bound</em> (Tensor Core limited),
+                    not memory-bound. MI300x's HBM3 bandwidth is so large that it feeds
+                    the Tensor Cores faster than they can consume data — the bottleneck
+                    shifts from memory to compute. This is why MI300x achieves even larger
+                    speedups than T4 for outer-product.
+                </p>
+
+                <h2>Dense Dataflow: a Separate Finding</h2>
+
+                <p>
+                    I also benchmarked Weight Stationary (WS), Input Stationary (IS),
+                    and Output Stationary (OS) dataflow strategies for dense matmul across
+                    13 LLaMA 1-7B shapes.
+                </p>
+
+                <div class="figure">
+                    <img src="../../assets/figures/dense_winner_heatmap.png"
+                         alt="Winning dataflow strategy heatmap">
+                    <p class="figure-caption">
+                        Winning dataflow strategy per hardware and shape.
+                        IS wins on MI300x (13/13), WS wins on T4 (11/13).
+                    </p>
+                </div>
+
+                <div class="finding-box">
+                    <p>Dataflow choice is hardware-dependent. IS wins on MI300x for all shapes —
+                    HBM3 bandwidth absorbs dataflow differences. WS wins on T4 for 11/13 shapes —
+                    bandwidth constraints make weight reuse critical. OS is consistently worst
+                    (3.3x penalty on T4, 1.26x on MI300x).</p>
+                </div>
+
+                <h2>Code</h2>
+
+                <p>
+                    All kernels, benchmark scripts, results, and analysis are available at:
+                    <a href="https://github.com/midiareshadi/dataflow-bench"
+                       target="_blank">github.com/midiareshadi/dataflow-bench</a>
+                </p>
+
+                <pre><code>git clone https://github.com/midiareshadi/dataflow-bench.git
+cd dataflow-bench
+pip install torch triton pandas numpy matplotlib
+
+# Dense dataflow benchmark
+python3 dense/benchmark_t4.py
+
+# Sparse SpMSpM benchmark
+python3 sparse/benchmark_t4.py
+
+# Bandwidth utilization analysis
+python3 sparse/analysis/roofline.py</code></pre>
+
+                <h2>References</h2>
+                <ul>
+                    <li>GAMMA — SpMSpM algorithm comparison:
+                        <a href="https://people.csail.mit.edu/sanchez/papers/2021.gamma.asplos.pdf"
+                           target="_blank">Günnemann et al., ASPLOS 2021</a></li>
+                    <li>H2O — LLM attention sparsity:
+                        <a href="https://arxiv.org/abs/2306.14048" target="_blank">Zhang et al., 2023</a></li>
+                    <li>LOCAL — Dataflow mapping algorithm:
+                        <a href="https://arxiv.org/abs/2211.03672" target="_blank">Reshadi et al., 2022</a></li>
+                    <li>Eyeriss — Dataflow strategies:
+                        <a href="https://eems.mit.edu/wp-content/uploads/2016/11/eyeriss_jssc_2017.pdf"
+                           target="_blank">Chen et al., JSSC 2017</a></li>
+                    <li>Triton:
+                        <a href="https://github.com/openai/triton" target="_blank">github.com/openai/triton</a></li>
+                </ul>
+
+            </div>
+        </article>
+    </main>
+    
+    <script>
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const main = document.querySelector('.main');
+        const floatingBtn = document.getElementById('floating-toggle');
+        if (sidebar.style.display === 'none') {
+            sidebar.style.display = 'block';
+            main.style.marginLeft = '260px';
+            floatingBtn.style.display = 'none';
+        } else {
+            sidebar.style.display = 'none';
+            main.style.marginLeft = '2rem';
+            floatingBtn.style.display = 'block';
+        }
+    }
+    </script>
+</body>
+</html>
