@@ -59,14 +59,14 @@
 <p>The expected result is that AMD's vendor library beats portable
 DSL kernels on AMD hardware, the way vendor libraries always have on
 every GPU platform. This post measures exactly how much, and why.
-On a single MI300X, across a grid of FlashAttention-forward shapes
-typical of production workloads, AITER outruns the Triton-on-AMD
-baseline by 18–62%. PyTorch SDPA dispatches to AOTriton on this
-hardware and tracks the Triton baseline closely. TileLang is included as a scope
+On a single <a href="https://www.amd.com/en/products/accelerators/instinct/mi300/mi300x.html">MI300X</a>, across a grid of FlashAttention-forward shapes
+typical of production workloads, <a href="https://github.com/ROCm/aiter">AITER</a> outruns the Triton-on-AMD
+baseline by 18–62%. PyTorch SDPA dispatches to <a href="https://github.com/ROCm/aotriton">AOTriton</a> on this
+hardware and tracks the <a href="https://github.com/triton-lang/triton">Triton</a> baseline closely. <a href="https://github.com/tile-ai/tilelang">TileLang</a> is included as a scope
 limit rather than a peer-comparable result; the generic forward-
 attention example we ran reaches 37 TFLOPS at the calibration shape,
 well below what the post's three measured implementations achieve.
-Section 7 explains why we don't treat this as a benchmark of
+The caveats section explains why we don't treat this as a benchmark of
 TileLang.</p>
 <div class="figure">
     <img src="../../assets/figures/throughput_vs_seqlen.png" alt="Attention forward-pass throughput vs sequence length on MI300X, faceted by head dimension">
@@ -85,9 +85,9 @@ because it tells you what the portable option is currently good for
 and what it isn't.</p>
 <h2>Why this comparison, why now</h2>
 <p>The state of attention on AMD has moved in the last year. AMD's own
-<a href="https://github.com/ROCm/aiter">AITER</a> library has matured into a
+AITER library has matured into a
 production-grade kernel set built on Composable Kernel, and the
-<a href="https://github.com/ROCm/aotriton">AOTriton</a> project ships ahead-of-
+AOTriton project ships ahead-of-
 time-compiled Triton attention kernels that PyTorch SDPA now dispatches
 to on ROCm builds. Both are real, well-tuned, and competitive at the
 shapes that matter for inference.</p>
@@ -106,7 +106,7 @@ which kernel is fastest at a given shape. What it does less often is
 differently between two kernels that produce the same output at
 different speeds. That gap is what this post tries to fill: a single
 harness, four implementations, a published-baseline calibration, and a
-second pass with <code>rocprofv3</code> to turn the ranking into a mechanistic
+second pass with <a href="https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/latest/"><code>rocprofv3</code></a> to turn the ranking into a mechanistic
 story about matrix-core utilization.</p>
 <p>Audience: kernel writers picking tooling, framework integrators
 trying to understand what their dispatch is actually doing on this
@@ -214,7 +214,7 @@ Two notes about it. First, the kernel definition hardcodes <code>T.float16</code
 as its working dtype, which is why TileLang runs at FP16 in this
 comparison while the other three run at BF16. Second, the example is
 generic — written to compile cleanly on multiple backends — not tuned
-for MI300X specifically. Section 7 treats it as a scope limit rather
+for MI300X specifically. The caveats section treats it as a scope limit rather
 than a peer-comparable result, and explains why.</p>
 <h2>Throughput across the shape grid</h2>
 <p>The ranking holds at every cell. AITER leads everywhere, the Triton
@@ -238,7 +238,7 @@ of the workload differently. Something in AITER scales with head
 dimension in a way the Triton-lineage kernels don't.</p>
 <p>The other thing worth flagging before moving on: Triton and PyTorch
 SDPA track each other remarkably closely — within a few percent at
-every shape. That's not a coincidence, and section 4 explains why
+every shape. That's not a coincidence, and the implementations section explains why
 (SDPA dispatches to AOTriton on this hardware; the two curves are
 effectively two builds of the same kernel family). The convergence
 makes the AITER-vs-Triton-lineage gap the actual comparison the
