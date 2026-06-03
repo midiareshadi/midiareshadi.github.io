@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attention kernels on MI300X: a utilization story — Midia Reshadi</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="floating-toggle" onclick="toggleSidebar()" style="
+        position:fixed; top:1rem; left:1rem; z-index:1000;
+        background:none; border:none; cursor:pointer;
+        padding:4px; color:#D97757; display:none;
+    " title="Show sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+    </button>
+        <aside class="sidebar">
+        <div style="margin-bottom:1.5rem;">
+            <button onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:0; color:#D97757; line-height:1; display:block; margin-bottom:10px;" title="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            </button>
+            <p style="font-size:17px; font-weight:700; color:#D97757; margin:0; white-space:nowrap; font-family:"Playfair Display", Georgia, serif;">&#9998; Midia Reshadi's Blog</p>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="../../index.html">&#8962; Home</a></li>
+        </ul>
+        <div class="sidebar-links">
+            <a href="https://github.com/midiareshadi" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+            </a>
+            <a href="https://www.linkedin.com/in/midia-reshadi/" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                LinkedIn
+            </a>
+            <a href="https://scholar.google.com/citations?user=gVWj19kAAAAJ&hl=en" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+                Google Scholar
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <article>
+            <header class="post-header">
+                <h1>Attention kernels on MI300X: a utilization story</h1>
+                <p class="post-meta">June 2026 &middot; ~16 min read &middot;
+                    <a href="https://github.com/midiareshadi/attn-dsl-bench">code</a>
+                </p>
+            </header>
+
+            <div class="post-content">
+
+<p>The expected result is that AMD's vendor library beats portable
+DSL kernels on AMD hardware, the way vendor libraries always have on
+every GPU platform. This post measures exactly how much, and why.
+On a single MI300X, across a grid of FlashAttention-forward shapes
+typical of production workloads, AITER outruns the Triton-on-AMD
+baseline by 18–62%. PyTorch SDPA dispatches to AOTriton on this
+hardware and tracks the Triton baseline closely. TileLang is included as a scope
+limit rather than a peer-comparable result; the generic forward-
+attention example we ran reaches 37 TFLOPS at the calibration shape,
+well below what the post's three measured implementations achieve.
+Section 7 explains why we don't treat this as a benchmark of
+TileLang.</p>
+<div class="figure">
+    <img src="../../assets/figures/throughput_vs_seqlen.png" alt="Attention forward-pass throughput vs sequence length on MI300X, faceted by head dimension">
+    <p class="figure-caption">Throughput across the shape grid. Three implementations, five sequence lengths, two head dimensions. AITER leads at every cell; SDPA tracks the Triton baseline closely.</p>
+</div>
+<p>The interesting part isn't the ranking — that part was expected — but
+the <em>shape</em> of the gap and the reason for it. The rest of the post
+lays out the harness, validates it against <a href="https://hazyresearch.stanford.edu/">HazyResearch</a>'s published
+baselines (within 1% on AITER), walks the throughput data shape by
+shape, and then turns to the hardware counters that explain the
+ranking mechanistically. The gap between AITER and the Triton-lineage
+kernels on MI300X is, at root, a matrix-core scheduling gap — it has
+a measurable size, a specific cause, and a name. That's a useful
+thing to know if you write attention kernels on AMD hardware in 2026,
+because it tells you what the portable option is currently good for
+and what it isn't.</p>
+<h2>Why this comparison, why now</h2>
+<p>The state of attention on AMD has moved in the last year. AMD's own
+<a href="https://github.com/ROCm/aiter">AITER</a> library has matured into a
+production-grade kernel set built on Composable Kernel, and the
+<a href="https://github.com/ROCm/aotriton">AOTriton</a> project ships ahead-of-
+time-compiled Triton attention kernels that PyTorch SDPA now dispatches
+to on ROCm builds. Both are real, well-tuned, and competitive at the
+shapes that matter for inference.</p>
+<p>On the benchmarking side, HazyResearch's
+<a href="https://github.com/HazyResearch/HipKittens">HipKittens</a> project — and
+specifically its <code>attn_fwd_baselines.py</code> harness — has become the
+public calibration point that anyone doing this work uses as a
+reference. Tile-based DSLs like TileLang have published their own
+MI300X claims. The result is a comparison landscape that's much richer
+than it was eighteen months ago — and one that's spread across several
+repos, several blog posts, and several different ways of reporting
+numbers.</p>
+<p>What that landscape mostly does well is rank. Benchmarks tell you
+which kernel is fastest at a given shape. What it does less often is
+<em>explain</em> the rankings — what the hardware is actually doing
+differently between two kernels that produce the same output at
+different speeds. That gap is what this post tries to fill: a single
+harness, four implementations, a published-baseline calibration, and a
+second pass with <code>rocprofv3</code> to turn the ranking into a mechanistic
+story about matrix-core utilization.</p>
+<p>Audience: kernel writers picking tooling, framework integrators
+trying to understand what their dispatch is actually doing on this
+hardware, and researchers who'd rather have hardware-grounded numbers
+than vendor claims.</p>
+<h2>Methodology</h2>
+<h3>Hardware and environment</h3>
+<p>All measurements were taken on a single AMD Instinct MI300X running
+ROCm 7.2.2 and PyTorch 2.10.0
+(HIP build). The sweep landed inside a single session, so every row
+in the dataset reports the same environment — but the harness stamps
+the ROCm and PyTorch versions on each row regardless, because containers are reassigned
+between sessions, and stamping each row keeps the dataset honest
+across longer-running campaigns.</p>
+<h3>The harness</h3>
+<p>For every cell — one (implementation, shape, dtype) combination — the
+harness allocates the inputs, runs a warmup loop to let any JIT or
+autotune work settle, then times a measured loop using
+<code>torch.cuda.Event</code> records around the kernel call alone, not around
+allocation or data movement. Counts default to fifty warmup iterations
+and thirty measured iterations per cell; the measured times are
+reported as average, median, p25, and p75. Each cell also runs a
+correctness check, comparing the kernel's output against PyTorch SDPA
+at the same shape, dtype, and seed. The runner reads the cell from a
+YAML config and appends one row per cell to a CSV. Code lives in the
+project repo <a href="https://github.com/midiareshadi/attn-dsl-bench/blob/main/bench/runner.py">bench/runner.py</a>.</p>
+<h3>Calibration against published numbers</h3>
+<p>The numbers in this post are only as good as the harness behind them,
+so before any of the sweep runs we calibrated against HazyResearch's
+published AITER baseline, which uses the same forward-attention kernel
+at a standard reference shape (B=16, H=16, N=16384, D=64, causal,
+BF16). Their reported throughput is 355.0 TFLOPS; our harness gets
+352.5. Within 0.7% — close enough that any disagreement we report
+elsewhere is unlikely to be a methodology artifact. The PyTorch SDPA
+calibration was less tight (we measured 8% higher than their reported
+SDPA number), which turned out to be the first sign of the AOTriton
+dispatch story the post returns to later.</p>
+<h3>The shape grid</h3>
+<p>The sweep covers five sequence lengths (1024, 2048, 4096, 8192, 16384)
+and two head dimensions (64, 128), at a fixed batch of 16, 16 query
+heads, and a non-grouped KV configuration, with causal masking on. All
+three timing-sweep implementations ran at BF16; TileLang ran at FP16
+because its example kernel hardcodes that dtype. The grid is aimed at
+the prefill regime of a moderate-batch inference workload — long
+enough sequences to push the kernels into the regime where attention
+dominates, balanced batch sizes that don't trivially saturate the
+machine. What the grid does not cover — decode-regime small-batch
+shapes, grouped-query configurations, the backward pass — is the
+subject of the caveats section. The full grid lives in
+<a href="https://github.com/midiareshadi/attn-dsl-bench/tree/main/configs">configs/sweep_v1_*.yaml</a>.</p>
+<h3>Hardware counters</h3>
+<p>A second runner wraps each cell in <code>rocprofv3</code> and collects four
+derived metrics in a single counter-collection pass:
+<code>MfmaUtil</code>, <code>OccupancyPercent</code>, <code>MfmaFlopsBF16</code>, and <code>LdsUtil</code>. The
+challenge there is that <code>rocprofv3</code> captures every kernel a process
+launches — RNG, elementwise, the attention kernel of interest, and so
+on — so the runner identifies the attention kernel as the one carrying
+the highest <code>MfmaFlopsBF16</code> value across the captured dispatches. That
+rule is more robust than per-implementation name regexes, and it works
+identically across AITER, Triton, and SDPA. The output is a counters
+CSV with the same shape keys as the timing CSV, so the two can be
+joined directly. Code: <a href="https://github.com/midiareshadi/attn-dsl-bench/blob/main/bench/profile_runner.py">bench/profile_runner.py</a>.</p>
+<h2>The implementations</h2>
+<h3>AITER</h3>
+<p><a href="https://github.com/ROCm/aiter">AITER</a> is AMD's open-source kernel
+library, built on top of
+<a href="https://github.com/ROCm/composable_kernel">Composable Kernel</a> and
+exposed through a PyTorch-friendly Python API. The function we
+benchmark is <code>aiter.flash_attn_func</code>, a hand-tuned FlashAttention-2
+forward kernel targeted specifically at CDNA3 (gfx942). The kernel
+that actually dispatches is the CK <code>FmhaFwdKernel</code> template instantiated
+for the requested dtype, head dimension, and causal flag — which we
+confirmed by reading the dispatched kernel name from <code>rocprofv3</code>. It's
+the most hand-tuned implementation in the comparison and the fastest at
+every cell of the sweep.</p>
+<h3>PyTorch SDPA</h3>
+<p><code>torch.nn.functional.scaled_dot_product_attention</code> is the standard
+PyTorch entry point for attention; on ROCm builds it dispatches to one
+of several backends depending on dtype, shape, and head dimension. In
+this comparison, every cell dispatches to
+<a href="https://github.com/ROCm/aotriton">AOTriton</a>'s ahead-of-time-compiled
+Triton FlashAttention kernel — confirmed by the dispatched kernel name
+captured by <code>rocprofv3</code> (<code>attn_fwd</code>, matching the Triton baseline). So
+the SDPA curve in our results is not a separate third kernel; it's a
+second build of a Triton-lineage attention kernel, compiled
+ahead-of-time rather than at runtime. That detail is why SDPA and the
+Triton baseline track each other so closely in the throughput sweep.</p>
+<h3>Triton (HipKittens baseline)</h3>
+<p>For Triton we use the AMD Triton team's FlashAttention-2 forward
+implementation, vendored into HazyResearch's HipKittens repository as
+<code>analysis/baselines/attn/triton_baseline_v02.py</code>. It is the public
+Triton-on-AMD baseline that other recent work (including HipKittens'
+own attention writeups) calibrates against. The kernel autotunes per
+shape: at first invocation it sweeps a small set of block-size
+configurations, picks a winner, and caches the compiled binary. Our
+harness pays the autotune cost once per shape during warmup, so the
+measured throughput reflects post-tune performance.</p>
+<h3>TileLang</h3>
+<p><a href="https://github.com/tile-ai/tilelang">TileLang</a> is an open-source
+portable tile DSL — a Python-embedded language for writing GPU kernels
+that targets both CUDA and HIP backends from a single source.
+The implementation we benchmark is the project's generic
+FlashAttention-forward example, <code>examples/flash_attention/example_mha_fwd_bhsd.py</code>.
+Two notes about it. First, the kernel definition hardcodes <code>T.float16</code>
+as its working dtype, which is why TileLang runs at FP16 in this
+comparison while the other three run at BF16. Second, the example is
+generic — written to compile cleanly on multiple backends — not tuned
+for MI300X specifically. Section 7 treats it as a scope limit rather
+than a peer-comparable result, and explains why.</p>
+<h2>Throughput across the shape grid</h2>
+<p>The ranking holds at every cell. AITER leads everywhere, the Triton
+baseline and PyTorch SDPA cluster behind it, and all three curves rise
+with sequence length on both head dimensions. At <code>head_dim=128</code>, the
+spread reaches its widest: AITER touches 494 TFLOPS at <code>N=16384</code> while
+the Triton baseline tops out at 364 and SDPA at 307. At <code>head_dim=64</code>,
+everything sits lower and tighter — AITER at 355, Triton at 301, SDPA
+at 270 — but the order is the same.</p>
+<p>What's strange is how unevenly the kernels respond to head dimension.</p>
+<p>Move a kernel from <code>head_dim=64</code> to <code>head_dim=128</code> at the same sequence
+length and you'd expect a modest uplift across the board — head_dim=128
+has higher arithmetic intensity, more FLOPs per byte of K/V loaded,
+which should help everyone. And it does help everyone, but not by the
+same amount. SDPA picks up about 14% at large N; Triton picks up about
+21%; AITER picks up nearly 40%. The same architectural change benefits
+one kernel almost three times as much as another. And the pattern
+shows up at every sequence length: the three implementations don't
+just sit at different absolute throughputs, they respond to the shape
+of the workload differently. Something in AITER scales with head
+dimension in a way the Triton-lineage kernels don't.</p>
+<p>The other thing worth flagging before moving on: Triton and PyTorch
+SDPA track each other remarkably closely — within a few percent at
+every shape. That's not a coincidence, and section 4 explains why
+(SDPA dispatches to AOTriton on this hardware; the two curves are
+effectively two builds of the same kernel family). The convergence
+makes the AITER-vs-Triton-lineage gap the actual comparison the
+data is making, regardless of how PyTorch happens to be calling its
+attention kernel.</p>
+<p>So: the ranking is stable, the curves rise as expected, and one
+thing about the data refuses to fit. Why does head dimension help
+one kernel so much more than the others, when all three are computing
+the same math on the same hardware? That's the question the next
+section takes up, and the answer turns out not to be in the throughput
+numbers at all.</p>
+<h2>The gap, measured: matrix-core utilization</h2>
+<p>So AITER is fastest, and its lead widens at <code>head_dim=128</code>. The obvious
+question is <em>why</em> — and the obvious answer is wrong.</p>
+<p>Reach for the usual GPU performance intuition and you'd guess occupancy:
+AITER must be keeping more wavefronts resident, hiding more latency,
+packing the machine fuller. It's the first thing you'd check.</p>
+<p>It's not that. At <code>head_dim=128</code>, every kernel here runs far below
+occupancy saturation — AITER at 18–23%, Triton at 10–19%, SDPA at
+10–12%. The fastest kernel and the slowest are separated by a few points
+of occupancy on a machine none of them is filling. Whatever explains
+AITER's lead, "it fills the GPU with more waves" isn't it — there are
+waves to spare everywhere.</p>
+<h3>The right lens</h3>
+<p>Attention isn't a GEMM. It interleaves two matrix multiplies — QKᵀ and
+the PV product — with a softmax that runs on the vector ALU, not the
+matrix cores. While the softmax for one tile is running, the matrix
+cores sit idle. So the question that actually matters for an
+attention kernel isn't "how many waves are resident" but "what fraction
+of the time are the matrix cores doing work." That's MFMA utilization.</p>
+<div class="figure">
+    <img src="../../assets/figures/mfma_util_vs_seqlen.png" alt="MFMA matrix-core utilization vs sequence length on MI300X, faceted by head dimension">
+    <p class="figure-caption">Matrix-core utilization across the same grid. AITER's 72% at head_dim=128, N=16384 sits more than twice as high as the Triton-lineage kernels' 33–34% plateau.</p>
+</div>
+<p>Here the picture snaps into focus. AITER climbs to 72% MFMA utilization
+at <code>head_dim=128</code>, <code>N=16384</code>. The two Triton-lineage kernels — the
+HipKittens baseline and the AOTriton kernel that PyTorch SDPA dispatches
+to — both plateau around 33–34%. AITER keeps the matrix cores busy more
+than twice as often, and the gap is widest at exactly the shapes where
+its throughput lead was widest. The throughput ranking and the
+utilization ranking are the same ranking.</p>
+<h3>It generalizes</h3>
+<p>This isn't an artifact of one favorable shape. Plot every cell in the
+sweep — all three implementations, all ten shapes — with throughput
+against MFMA utilization, and the points fall along a single rising
+band.</p>
+<div class="figure">
+    <img src="../../assets/figures/throughput_vs_mfma.png" alt="Throughput versus MFMA utilization scatter across all 30 measured cells">
+    <p class="figure-caption">Throughput plotted against MFMA utilization for every (implementation, shape) cell. Points fall along a single rising band: high utilization means high throughput, across implementations and across shapes.</p>
+</div>
+<p>Throughput is a function of how busy you keep the matrix cores. AITER's
+points sit in the upper right; the Triton-lineage kernels cluster lower
+left. The relationship holds across implementations and across the shape
+grid, which is what lets us call it an explanation rather than a
+coincidence.</p>
+<h3>Back to the paradox</h3>
+<p>Now the occupancy result makes sense. Occupancy matters when a kernel
+is latency-bound — when the machine stalls waiting on memory and needs
+spare wavefronts to swap in and hide the wait. But a kernel running at
+72% MFMA utilization is compute-bound: the matrix cores are busy most of
+the time, there's little stall to hide, and so extra wavefronts would
+have little to do. That's why all three kernels run comfortably below
+occupancy saturation without it being the bottleneck — and why the few
+points of occupancy separating them don't track throughput. Utilization
+does. The two findings aren't in tension; the high-utilization regime is
+exactly the one where occupancy stops mattering.</p>
+<h3>A check on the accounting</h3>
+<p>One more thing the counters bought us: confidence in the FLOP numbers
+themselves. The throughput figures rest on a theoretical FLOP count —
+the textbook <code>4·B·N²·H·D</code>, halved for causal masking. The hardware
+reports its own tally through <code>MfmaFlopsBF16</code>. At <code>N=4096</code>, <code>head_dim=64</code>,
+the theoretical count is 5.50×10¹¹ FLOPs; the hardware measured
+5.67×10¹¹ — agreement within 3%, with the small excess consistent with
+causal attention computing a few partial tiles before masking them. The
+counters don't just rank the kernels; they independently confirm the
+arithmetic the rankings are built on.</p>
+<h3>What it means</h3>
+<p>The distance between AITER and the Triton-lineage kernels on MI300X is,
+at root, a matrix-core scheduling gap. AITER's hand-tuned Composable
+Kernel extracts utilization that the Triton compiler's autotuner doesn't
+reach at these shapes — not because Triton is generating <em>wrong</em> code,
+but because closing the last stretch from 34% to 72% is exactly the kind
+of scheduling problem hand-tuning still wins. That's the honest state of
+the DSL-versus-vendor tradeoff on this hardware in 2026. The portable
+option is real, it is correct, and the gap to the vendor library has a
+measured size and a measured cause — the kind of gap a sufficiently
+disciplined autotuner could eventually close.</p>
+<h2>What this measurement doesn't claim</h2>
+<p>The dataset is narrow on purpose — one machine, one harness, one shape
+grid — and that narrowness is the right thing to be honest about
+before anyone extrapolates the results.</p>
+<h3>TileLang as scope limit, not peer-comparable result</h3>
+<p>The TileLang number in this post — 37 TFLOPS at the calibration shape,
+where the other three implementations land between 270 and 355 — is
+a single data point from a single example. We do not treat it as a
+benchmark of TileLang. The example we ran is <code>example_mha_fwd_bhsd.py</code>,
+which is written to compile cleanly on multiple backends rather than
+to extract MI300X performance; making TileLang produce competitive
+attention numbers on this hardware involves a longer environment-and-
+kernel-tuning project than fit inside this work. TileLang has
+published its own MI300X claims for other kernels (notably FlashMLA)
+that we don't have data to evaluate. The fair statement is: <em>generic
+TileLang FA examples don't perform on MI300X out of the box</em>, and
+that's a meaningfully different claim from "TileLang is slow."</p>
+<h3>Forward pass only</h3>
+<p>Everything in this post is FlashAttention forward. The backward pass
+is a different kernel with different performance characteristics — at
+both the implementation level (recomputation strategies vary) and at
+the hardware level (different register pressure, different memory
+access patterns). Nothing here generalizes to training workloads.</p>
+<h3>Shape coverage</h3>
+<p>We swept five sequence lengths and two head dimensions at a single
+batch size (B=16), a single non-grouped head configuration (H=H_KV=16),
+with causal masking on. That's the prefill regime of a moderate-batch
+inference workload. It is <em>not</em> the decoding regime (B=1, short query
+against long KV cache) and not grouped-query attention (H_KV &lt; H),
+both of which are what production LLM inference actually looks like.
+The post's conclusions about AITER's lead and matrix-core utilization
+hold inside this grid; extrapolating to decode or GQA shapes would
+need direct measurement.</p>
+<h3>Dtype: FP16 vs BF16 for TileLang</h3>
+<p>The three Triton-lineage and CK implementations all ran at BF16. The
+TileLang kernel definition hardcodes FP16 in its tensor types, so the
+TileLang row in the comparison is at FP16. On MI300X these are very
+close in arithmetic throughput on the matrix cores, but they are not
+identical, and a strictly apples-to-apples TileLang comparison would
+require a BF16 variant of the kernel that we didn't write.</p>
+<h3>Counter noise at small N for Triton</h3>
+<p>The hardware-counter runner captures the attention kernel by selecting
+the dispatched kernel with the highest <code>MfmaFlopsBF16</code>. For Triton at
+small N, the kernel runs fast enough that the warmup loop and the
+autotuner's re-runs produce hundreds of small dispatches per cell
+instead of the cleaner ~8 we see for AITER. <code>MfmaUtil</code> is a ratio of
+busy cycles to total cycles, so it is robust to dispatch count, and
+the values trend cleanly with N — which is the tell that they're
+real. A cleaner version would profile in a separate, autotune-disabled
+pass.</p>
+<h2>What to do with this</h2>
+<p>The headline result of the post is not that AMD's vendor library beats
+a portable DSL kernel on AMD hardware — that would be expected, and
+familiar from every other GPU platform. The result is that the gap is
+measurable, has a specific architectural cause, and is closer than the
+folklore around portable kernels would suggest.</p>
+<p>That gives three groups of readers something concrete to do.</p>
+<h3>If you write attention kernels on MI300X</h3>
+<p>Use AITER when you can. The gap to Triton-on-AMD is real (18–62% in
+throughput across our grid), it's biggest at the head dimensions and
+sequence lengths that show up in production prefill, and it's
+explained by matrix-core utilization that the autotuner currently
+doesn't reach. None of that is going to change in the next month
+because someone made a clever scheduling change in Triton — the gap
+sits at a structural level the compiler would need to learn to handle.</p>
+<p>Use the Triton baseline when AITER isn't an option — when you need a
+kernel you can read and modify, when your fused-attention variant
+isn't supported by AITER's API, or when you're doing research on what
+the autotuner <em>could</em> do better. It's a real choice, not a fallback.
+At 60–80% of AITER's throughput, depending on the shape, it's good
+enough to be the working answer for a substantial slice of workloads.</p>
+<h3>If you integrate against PyTorch on ROCm</h3>
+<p>Know that your SDPA performance is your AOTriton performance: PyTorch
+SDPA on ROCm dispatches to AOTriton's compiled Triton FA kernel, not
+to AITER. If a few-tens-of-percent throughput uplift on attention
+matters for your workload, an explicit dispatch to AITER's
+<code>flash_attn_func</code> is worth the integration cost. If it doesn't, the
+SDPA path is the same throughput as a hand-rolled Triton path — that
+is a useful thing to know in advance.</p>
+<h3>If you build benchmarks for AI hardware</h3>
+<p>The shape of this dataset — timing joined to hardware counters on the
+same shape keys — is the part we found most useful, and the part most
+attention benchmarks skip. <code>rocprofv3</code> is mature enough on MI300X to
+collect derived utilization metrics in a single pass per cell, which
+keeps the methodology costs low. The runner and configs are in the
+repo and the dataset is reproducible from them; if you want to extend
+the comparison to a workload we didn't cover, fork it.</p>
+<h3>What we would measure next</h3>
+<p>Three directions in roughly increasing scope. <em>GQA configurations</em>
+(H_KV &lt; H) and the <em>decode regime</em> (B=1, short Q against long KV)
+together would cover the shapes production LLM inference actually
+runs at. <em>The backward pass</em> — a separate kernel with different
+performance characteristics — would let the comparison say anything
+useful about training. And as both AITER and the Triton-on-AMD
+ecosystem keep moving, the same harness over the same grid in six
+months would tell us whether the gap is closing, holding, or
+widening — which is the question that actually matters for anyone
+betting on portable kernels long-term.</p>
+<p>The vendor library wins for attention on MI300X in 2026. That's not
+news. What this post tries to be useful for is the measurement of
+<em>how much</em> it wins, <em>where</em> it wins, and <em>why</em> it wins — because
+the gap has a name now, and a named gap is the kind compilers
+eventually close.</p>
+
+            </div>
+        </article>
+    </main>
+    
+    <script>
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const main = document.querySelector('.main');
+        const floatingBtn = document.getElementById('floating-toggle');
+        if (sidebar.style.display === 'none') {
+            sidebar.style.display = 'block';
+            main.style.marginLeft = '260px';
+            floatingBtn.style.display = 'none';
+        } else {
+            sidebar.style.display = 'none';
+            main.style.marginLeft = '2rem';
+            floatingBtn.style.display = 'block';
+        }
+    }
+    </script>
+</body>
+</html>

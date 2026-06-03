@@ -1,1 +1,4 @@
 .DS_Store
+
+# Build-time scratch (markdown -> HTML conversion workspace)
+_post-build/
