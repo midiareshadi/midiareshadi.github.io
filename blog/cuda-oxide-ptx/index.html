@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe Rust on the GPU, at the PTX level: what cuda-oxide actually emits — Midia Reshadi</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="floating-toggle" onclick="toggleSidebar()" style="
+        position:fixed; top:1rem; left:1rem; z-index:1000;
+        background:none; border:none; cursor:pointer;
+        padding:4px; color:#D97757; display:none;
+    " title="Show sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+    </button>
+        <aside class="sidebar">
+        <div style="margin-bottom:1.5rem;">
+            <button onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:0; color:#D97757; line-height:1; display:block; margin-bottom:10px;" title="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            </button>
+            <p style="font-size:17px; font-weight:700; color:#D97757; margin:0; white-space:nowrap; font-family:"Playfair Display", Georgia, serif;">&#9998; Midia Reshadi's Blog</p>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="../../index.html">&#8962; Home</a></li>
+        </ul>
+        <div class="sidebar-links">
+            <a href="https://github.com/midiareshadi" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+            </a>
+            <a href="https://www.linkedin.com/in/midia-reshadi/" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                LinkedIn
+            </a>
+            <a href="https://scholar.google.com/citations?user=gVWj19kAAAAJ&hl=en" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+                Google Scholar
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <article>
+            <header class="post-header">
+                <h1>Safe Rust on the GPU, at the PTX level: what cuda-oxide actually emits</h1>
+                <p class="post-meta">June 2026 &middot; ~15 min read &middot;
+                    <a href="https://github.com/midiareshadi/cuda-oxide-ptx">code</a>
+                </p>
+            </header>
+
+            <div class="post-content">
+<p><a href="https://github.com/NVlabs/cuda-oxide">NVlabs released cuda-oxide</a> in May 2026: a rustc codegen backend that compiles ordinary Rust — slices, <code>Option</code>, the borrow checker — down to PTX, so you can write GPU kernels in safe Rust instead of CUDA C++. The obvious question for anyone deciding whether to bet on it is: <em>what does that safety cost in the code that actually runs?</em></p>
+<p>The expected answer is "some overhead, because a young frontend can't match nvcc yet." That's correct, but it's not the interesting part. The interesting part is the <em>shape</em> of the overhead — where it comes from, whether it scales with the kernel, and what it costs once the code runs on the hardware. This post measures all of that on three small kernels, first at the level of the emitted PTX and SASS, then with a runtime benchmark on an L4. It is not a survey of Rust GPU ecosystems (Rust-CUDA, Triton, and the like) — only a close look at what cuda-oxide's own compiler emits.</p>
+<p>The story has two threads. The first is about overhead, and it has a satisfying ending. cuda-oxide's overhead is <strong>fixed</strong>: a constant prologue, nearly identical across kernels, dominated by generic-address-space memory access rather than per-element work. On a trivial kernel that prologue is 2.5× the instruction count of CUDA C++. But because it's a <em>fixed</em> cost, it <strong>amortizes</strong> — on a real kernel with shared memory and a loop, cuda-oxide reaches PTX parity with nvcc. And when I actually time the kernels, the overhead turns out to be <strong>mostly free</strong>: on memory-bound kernels it is completely hidden, and only on a compute-bound kernel does it cost a few percent.</p>
+<p>The second thread pins down <em>where</em> cuda-oxide's safety actually lives, in the emitted code. The project describes itself, carefully, as "safe(ish)": its <code>DisjointSlice</code> type makes parallel <em>writes</em> race-free and bounds-checked, while on the device, bounds checks on plain indexing are elided by design. The PTX lets me confirm that and draw the exact line — checked writes through <code>DisjointSlice</code>, unchecked reads through plain <code>&amp;[T]</code> indexing — and show what an out-of-bounds read does in practice. This is not a hidden flaw; it is the documented model, made precise at the level of the code that runs.</p>
+<h2>The short version</h2>
+<p>If you read nothing else:</p>
+<ul>
+<li>On tiny kernels, cuda-oxide emits ~2.5× the PTX of CUDA C++ — but it is a <em>fixed</em> prologue, not per-element work.</li>
+<li>Because it is fixed, it <strong>amortizes</strong>: on a real kernel (the reduction) cuda-oxide reaches PTX parity with nvcc.</li>
+<li>At runtime the overhead is <strong>mostly free</strong> — the three compilers are identical on the two memory-bound kernels, and cuda-oxide is a few percent slower on the one compute-bound kernel.</li>
+<li>The overhead comes from generic (not global) address-space loads — a fixable codegen gap, not algorithmic cost.</li>
+<li>cuda-oxide's safety guarantee covers race-free <em>writes</em>; on the device, plain <code>&amp;[T]</code> reads are not bounds-checked. That is its documented model, confirmed here at the PTX level.</li>
+</ul>
+<h2>Why three compilers, not two</h2>
+<p>The naive experiment is "compile a kernel with cuda-oxide and with nvcc, diff the PTX." Don't do this. cuda-oxide lowers Rust to LLVM IR and hands it to upstream <code>llc</code> (LLVM 21); nvcc lowers CUDA C++ through <code>libNVVM</code>, which is a <em>forked</em> LLVM. A two-way diff conflates two different things — the language frontend and the LLVM backend — and you'd end up blaming Rust for differences that are really libNVVM's.</p>
+<p>The fix is a third toolchain. I compile the same kernel three ways:</p>
+<table>
+<thead>
+<tr>
+<th>Toolchain</th>
+<th>Source</th>
+<th>Frontend</th>
+<th>Backend</th>
+<th>IR dumpable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cuda-oxide</td>
+<td>Rust</td>
+<td>rustc + Stable MIR</td>
+<td><code>llc</code>, upstream LLVM 21</td>
+<td>yes (<code>.ll</code>)</td>
+</tr>
+<tr>
+<td>clang</td>
+<td>CUDA</td>
+<td>clang</td>
+<td>upstream LLVM 21 (NVPTX)</td>
+<td>yes (<code>.ll</code>)</td>
+</tr>
+<tr>
+<td>nvcc</td>
+<td>CUDA</td>
+<td>cicc</td>
+<td>libNVVM (forked)</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>cuda-oxide and clang share the <em>same upstream LLVM 21 backend</em> (I pinned <code>clang-21</code> to match cuda-oxide's <code>llc-21</code>), so comparing them isolates the <strong>language</strong>. clang vs nvcc holds the language fixed and isolates the <strong>backend</strong>, as a baseline I can subtract out. The cuda-oxide-vs-clang pair is the one that actually answers "what does Rust cost."</p>
+<div class="figure">
+    <img src="../../assets/figures/fig-pipeline.svg" alt="Three compile paths: cuda-oxide, clang, and nvcc, and the backends they share">
+    <p class="figure-caption">The three compile paths. cuda-oxide and clang share the upstream LLVM 21 backend, so comparing them isolates the language; clang and nvcc share the language but differ in the backend.</p>
+</div>
+
+<p>I diff at two levels. cuda-oxide writes textual LLVM IR before invoking <code>llc</code>, and clang emits IR with <code>-emit-llvm</code>, so I can compare the IR <em>before</em> the shared backend runs — that's where Rust-specific artifacts (panic paths, address-space handling) live. Then I compare the final PTX and SASS. nvcc's NVVM IR isn't dumpable, so the IR-level diff is cuda-oxide vs clang only; PTX/SASS is all three.</p>
+<p>One methodological detail matters more than it looks. PTX is a virtual ISA; the real register allocation happens in <code>ptxas</code>. To keep the comparison honest I run a <strong>single <code>ptxas</code> binary over all three PTX files</strong> — so any register or SASS difference reflects the PTX, not a difference in ptxas versions. Everything targets <code>sm_89</code> (an L4), <code>-O3</code>, fast-math off.</p>
+<h2>Calibration</h2>
+<p>Before trusting any of this, the trivial kernel has to behave. For vecadd, all three toolchains allocate the <strong>same 12 registers</strong> with zero spills, and clang and nvcc come out nearly identical. The two C++ paths agreeing on the simplest kernel is what licenses treating divergence on anything harder as real signal, not a harness artifact. With that established:</p>
+<h2>vecadd: <code>c[i] = a[i] + b[i]</code></h2>
+<p>The Rust version uses cuda-oxide's safe pattern — a <code>DisjointSlice&lt;f32&gt;</code> for the output (race-free by construction) and <code>&amp;[f32]</code> for the inputs:</p>
+<pre><code class="language-rust">#[kernel]
+pub fn vecadd(a: &amp;[f32], b: &amp;[f32], mut c: DisjointSlice&lt;f32&gt;) {
+    let idx = thread::index_1d();
+    let i = idx.get();
+    if let Some(c_elem) = c.get_mut(idx) {
+        *c_elem = a[i] + b[i];
+    }
+}
+</code></pre>
+<p>The CUDA C++ is the obvious one-thread-per-element kernel with an <code>if (i &lt; n)</code> guard. Here's the static comparison:</p>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>oxide</th>
+<th>clang</th>
+<th>nvcc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ptxas registers</td>
+<td>12</td>
+<td>12</td>
+<td>12</td>
+</tr>
+<tr>
+<td>ptxas spills</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ptxas stack frame (B)</td>
+<td>8</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>PTX instructions</td>
+<td>64</td>
+<td>25</td>
+<td>26</td>
+</tr>
+<tr>
+<td>PTX branches</td>
+<td>8</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>PTX <code>setp</code></td>
+<td>5</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>PTX <code>cvt</code></td>
+<td>4</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>global loads</td>
+<td>0</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>generic loads</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>LLVM IR basic blocks</td>
+<td>20</td>
+<td>2</td>
+<td>—</td>
+</tr>
+<tr>
+<td>SASS instructions</td>
+<td>56</td>
+<td>32</td>
+<td>32</td>
+</tr>
+</tbody>
+</table>
+<p>Same register pressure, no spills — so the cost is not register allocation. But cuda-oxide emits ~2.5x the PTX instructions and ~1.75x the SASS, with an 8-byte stack frame the C++ paths don't have, far more control flow (8 branches vs 1), and — the tell — <strong>zero global loads</strong>. Its loads and stores go through the <em>generic</em> address space (<code>ld.b32</code>, no <code>.global</code> qualifier) where the C++ paths use <code>ld.global</code>. The four <code>cvt</code> instructions and the extra branches are the address-space machinery: cuda-oxide doesn't prove to LLVM that the slice's backing pointer lives in global memory, so it emits generic accesses that resolve the space at runtime.</p>
+<h2>gather: <code>out[i] = src[indices[i]]</code></h2>
+<p>The second kernel adds a data-dependent index — <code>src</code> is read at a position that isn't known at compile time, so the bounds can't be proven statically. My hypothesis going in: this is where Rust's safe indexing should cost the most, because a bounds check on <code>src[j]</code> can't be elided.</p>
+<p>It didn't happen. gather's cuda-oxide profile is almost identical to vecadd's:</p>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>oxide (vecadd)</th>
+<th>oxide (gather)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PTX instructions</td>
+<td>64</td>
+<td>64</td>
+</tr>
+<tr>
+<td>PTX branches</td>
+<td>8</td>
+<td>8</td>
+</tr>
+<tr>
+<td>PTX <code>setp</code></td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr>
+<td>generic loads</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>LLVM basic blocks</td>
+<td>20</td>
+<td>20</td>
+</tr>
+<tr>
+<td>panic / trap refs</td>
+<td>0 / 0</td>
+<td>0 / 0</td>
+</tr>
+</tbody>
+</table>
+<p>Meanwhile clang and nvcc <em>do</em> adapt to the new kernel (different multiply/add counts, 24 SASS instructions vs 32). So the C++ paths track the kernel logic, but cuda-oxide's overhead barely moves.</p>
+<p>That points at the real structure of the cost: <strong>it's a fixed prologue</strong>, not per-element work. The 8 branches, 5 <code>setp</code>, 20 basic blocks, and the generic-address machinery are essentially constant — thread-index computation, the <code>DisjointSlice</code> write check, and address-space resolution — and they dominate both of these small kernels regardless of what the kernel actually does. The kernel-specific arithmetic is a rounding error on top.</p>
+<p>And the thing a Rust programmer might expect — a bounds check on the data-dependent <code>src[indices[i]]</code> — isn't there. <code>panic_refs</code> and <code>trap_refs</code> are zero in both kernels. That absence is not an accident; it is what cuda-oxide documents about itself, which the next section makes precise.</p>
+<h2>Where the safety boundary sits: checked writes, unchecked reads</h2>
+<p>cuda-oxide describes itself, deliberately, as "safe(ish)," and its <a href="https://nvlabs.github.io/cuda-oxide/gpu-safety/the-safety-model.html">safety model</a> is precise about what that means. The guarantee is about parallel <em>writes</em>: the <code>DisjointSlice</code> + <code>ThreadIndex</code> types make one-thread-one-element writes race-free, and <code>get_mut</code> is bounds-checked — it returns <code>Option</code>, with <code>None</code> for an out-of-range index. Reads are a different story, and the docs say so. For shared memory they state that on the device the bounds check is elided and an out-of-bounds index is undefined behavior; and their own GEMM example keeps a manual <code>row &lt; m</code> guard precisely to avoid reading past the inputs. So the model is already documented. What the PTX adds is confirmation at the level of the code, and the exact line drawn for plain <code>&amp;[T]</code> reads.</p>
+<p>The static evidence shows it directly: across both kernels, <code>panic_refs</code> and <code>trap_refs</code> are zero. There is no bounds-check branch and no panic path anywhere in the emitted PTX for a plain <code>&amp;[T]</code> read. To see what that means at runtime, I ran the gather kernel with every index pointing past the end of <code>src</code>:</p>
+<pre><code class="language-rust">let idx_host: Vec&lt;u32&gt; = (0..N).map(|i| (i + N) as u32).collect(); // all OOB
+</code></pre>
+<p>On the CPU, <code>src[j]</code> with <code>j &gt;= src.len()</code> is a guaranteed panic. On the L4, the kernel <strong>launched, did not trap, and returned values</strong> (here <code>0.0</code>, from zeroed neighboring memory). No fault, no panic, no error on copy-back — exactly the elided-check behavior the docs describe, now visible end to end.</p>
+<p>So the boundary, stated precisely: <strong>checked, race-free writes through <code>DisjointSlice</code>; unchecked reads through plain <code>&amp;[T]</code> indexing.</strong> This is a defensible design — bounds-checking every device read would cost throughput, and <code>DisjointSlice</code>/<code>ThreadIndex</code> is clearly meant to be the safety line — and, to be clear, it is what the project documents, not something this post uncovered. The reason it is still worth stating plainly is that "write your GPU kernels in <em>safe</em> Rust" can read, to a Rust programmer, as a promise that includes reads. It does not. On the device, treat input bounds as your responsibility, the same as in CUDA C++ — which is also what the docs advise.</p>
+<h2>reduction: where the overhead amortizes</h2>
+<p>Back to the overhead. On two trivial kernels it was a fixed prologue, 2.5× the C++ instruction count. But a <em>fixed</em> cost has an obvious implication: on a kernel that does real work, it should shrink to a small fraction. The third kernel tests that — a block-wise sum reduction, with shared memory, a <code>__syncthreads()</code> barrier, and a tree-reduction loop. This is the first kernel in the suite that has substantial structure of its own.</p>
+<p>The prologue amortizes, and the result is striking:</p>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>oxide</th>
+<th>clang</th>
+<th>nvcc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PTX instructions</td>
+<td>47</td>
+<td>49</td>
+<td>47</td>
+</tr>
+<tr>
+<td>ptxas registers</td>
+<td>10</td>
+<td>11</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ptxas stack frame (B)</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>shared memory (B)</td>
+<td>1024</td>
+<td>1024</td>
+<td>1024</td>
+</tr>
+<tr>
+<td>ld.shared / st.shared</td>
+<td>3 / 2</td>
+<td>3 / 2</td>
+<td>3 / 2</td>
+</tr>
+<tr>
+<td>barriers</td>
+<td>2</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>SASS instructions</td>
+<td>56</td>
+<td>48</td>
+<td>48</td>
+</tr>
+</tbody>
+</table>
+<p>On a real kernel, cuda-oxide reaches <strong>PTX parity</strong> — 47 instructions to clang's 49, with <em>fewer</em> registers, no stack frame, and identical shared-memory use. The 2.5× gap from the trivial kernels is gone, because the fixed prologue is now a small share of a kernel that actually does something. So the overhead from the earlier sections is best read as a constant, not a multiplier: it dominates tiny memory-bound kernels and disappears into real ones.</p>
+<div class="figure">
+    <img src="../../assets/figures/fig-amortization.svg" alt="PTX instruction count per kernel for cuda-oxide, clang, and nvcc">
+    <p class="figure-caption">PTX instruction count per kernel. cuda-oxide is ~2.5x on the tiny kernels but reaches parity with nvcc on the reduction, where the kernel's own work dominates the fixed prologue.</p>
+</div>
+
+<p>Two honest qualifications. First — and this is the one that matters for the claim — the amortization does not depend on dropping safety. The prologue is the same fixed size it was on vecadd; it shrinks only <em>relative to the kernel</em>, because the reduction's own work (the loop, the shared-memory tree, the barrier) now dominates the instruction count. That is the general result. Separately, this particular kernel also happens to skip the per-element write check, because it uses cuda-oxide's <em>unchecked</em> operations — shared-memory indexing, and <code>get_unchecked_mut</code> for the block-indexed write, rather than the checked <code>DisjointSlice</code> path. So the skipped check is a bonus specific to this kernel, not the cause of the parity. Second, parity is a PTX-level result; in SASS, cuda-oxide is still ~17% heavier (56 vs 48), because the residual generic addressing survives into machine code even when the instruction count matches. Which raises the question this whole static exercise has been circling: does any of it actually cost speed?</p>
+<h2>What does the overhead cost?</h2>
+<p>Instruction counts are a proxy, not a measurement. A kernel with 2.5× the PTX can run at exactly the same speed, because GPU performance is usually limited by memory bandwidth or occupancy, not by how many instructions the kernel issues. So I benchmarked all three compilers, on the same L4, with the same data and launch config.</p>
+<p>The fair way to do this is one launcher and three compiled kernels. The harness rebuilds each toolchain's cubin from its committed PTX with the <em>same</em> <code>ptxas</code> used for the static study, loads all three through the CUDA driver API, and times each with CUDA events (many warmup launches, then a measured loop, median reported). Only the compiled code differs — the runtime analogue of the single-<code>ptxas</code> rule. Each result is checked against a host reference. Here are the per-launch medians at 16.7M elements:</p>
+<table>
+<thead>
+<tr>
+<th>kernel</th>
+<th>oxide (µs)</th>
+<th>clang (µs)</th>
+<th>nvcc (µs)</th>
+<th>limited by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>vecadd</td>
+<td>805</td>
+<td>807</td>
+<td>808</td>
+<td>memory bandwidth (83% of peak)</td>
+</tr>
+<tr>
+<td>gather</td>
+<td>5693</td>
+<td>5693</td>
+<td>5694</td>
+<td>memory latency (scattered reads)</td>
+</tr>
+<tr>
+<td>reduction</td>
+<td>324</td>
+<td>310</td>
+<td>307</td>
+<td>shared-memory pipeline</td>
+</tr>
+</tbody>
+</table>
+<p>On the two memory-bound kernels, the three compilers are <strong>identical</strong> — within 0.3% on vecadd, within 0.01% on gather. vecadd runs at 83% of the L4's peak bandwidth; gather is limited by the latency of its scattered reads. In both cases the kernel spends its time waiting on memory, and the GPU has plenty of idle cycles to absorb cuda-oxide's extra instructions. So the 2.5× static overhead costs, in wall-clock terms, <strong>nothing</strong>.</p>
+<div class="figure">
+    <img src="../../assets/figures/fig-runtime.svg" alt="cuda-oxide relative to nvcc: large static PTX overhead, near-zero runtime cost">
+    <p class="figure-caption">cuda-oxide relative to nvcc. The 2.46x static PTX overhead on vecadd and gather costs essentially nothing at runtime; the only measurable cost is the reduction's few percent, where the PTX is already at parity.</p>
+</div>
+
+<p>The reduction is the one case where the overhead is <em>not</em> fully hidden. cuda-oxide is the slowest and nvcc the fastest, by a few percent. This is the kernel with real compute — a shared-memory tree reduction — so it isn't purely bandwidth-bound (a profile puts it around 80% of the shared-memory pipeline's throughput), and the extra instructions have somewhere to bite. The direction matches the static data: cuda-oxide carried ~17% more SASS, and here it pays a small fraction of that back in time.</p>
+<p>I checked that the gap is real rather than a measurement artifact by reversing the order the compilers run in. The ranking didn't move: cuda-oxide stayed slowest and nvcc fastest even when cuda-oxide ran last. A GPU-clock drift would have flipped with the order; this didn't. The exact size wobbles between runs (roughly three to six percent), so the honest statement is "a few percent," not a single number — but the ranking is stable.</p>
+<p>One more thing the reduction numbers show, almost in passing, and it's worth stating because it's the whole reason this section exists. clang and nvcc emit the <strong>same</strong> number of SASS instructions (48 each), yet clang is about 1% slower, in every run and every order. Same instruction count, different speed. Instruction counting tells you about code <em>size and structure</em>; it does not, by itself, tell you about speed. The static half of this post is a real result about what cuda-oxide emits — but the runtime half is what tells you whether that emitted code costs you anything, and mostly, on this hardware, it doesn't.</p>
+<h2>What this doesn't claim</h2>
+<ul>
+<li><strong>Three small kernels.</strong> vecadd, gather, and a block reduction. The fixed-prologue-that-amortizes picture is consistent across all three, but a tiled GEMM or an attention kernel — far more compute-bound, far more register-hungry — could behave differently, and the few-percent reduction gap is exactly the kind of thing that could grow on a kernel where instruction issue actually binds.</li>
+<li><strong>One architecture.</strong> Everything is <code>sm_89</code>. cuda-oxide also targets Hopper/Blackwell features (TMA, WGMMA) that this says nothing about.</li>
+<li><strong>The nvcc column mixes two variables.</strong> nvcc's libNVVM is a forked LLVM, so clang-vs-nvcc differences blend backend and version. The language claim rests on the cuda-oxide-vs-clang pair, where the LLVM backend is held constant at 21.</li>
+<li><strong>The runtime gap is small and a little noisy.</strong> The reduction difference is a few percent and moves run-to-run with GPU clocks; I report a ranking that survives order-reversal, not a precise figure. Locking the clock would tighten it.</li>
+<li><strong>The OOB read stayed in mapped memory.</strong> A modest overrun didn't fault because the address was still in a valid allocation; a large enough overrun would likely segfault. The point is "no bounds check," not "reads are harmless." A sentinel value in adjacent memory would harden the demonstration further.</li>
+<li><strong>0.2.0.</strong> This is an early release and the read behavior may well be intentional. Numbers will move.</li>
+</ul>
+<h2>What to do with this</h2>
+<p><strong>If you're evaluating cuda-oxide for kernels:</strong> the overhead is a fixed cost from generic addressing and the safety prologue, so it hurts most on tiny memory-bound kernels and amortizes away on real ones — and even where it survives statically, it mostly doesn't show up in wall-clock time, because these kernels are limited by memory, not instructions. The one place it cost measurable time was the compute-bound reduction, and only a few percent. Separately, on safety: cuda-oxide's guarantee covers race-free writes, not input-read bounds — so treat input bounds as your responsibility on the device, the same as in CUDA C++. This is what the project's own docs advise; it is worth repeating only because "safe Rust" can sound like it includes reads.</p>
+<p><strong>If you work on the toolchain:</strong> the highest-leverage fix visible here is address-space inference — teaching the backend that slice pointers are global would remove the generic loads, the <code>cvt</code> instructions, much of the branch overhead, and the residual SASS gap that produced the reduction's few-percent slowdown, in one shot. A named gap is the kind a compiler eventually closes.</p>
+<p><strong>If you benchmark compilers:</strong> the three-way design (two C++ compilers to separate frontend from backend) and the single-<code>ptxas</code> rule are cheap and they materially change what you can conclude. And pair static counts with a runtime measurement: this post's clang-vs-nvcc result — same instruction count, 2% different speed — is a compact reminder that counting instructions is not measuring performance.</p>
+<p><strong>What I'd measure next:</strong> a tiled GEMM or an attention kernel, compute-bound enough that the reduction's few-percent gap might actually grow into something that matters; the reduction with a locked GPU clock, to turn "a few percent" into a number; the OOB read pushed far enough to characterize when an unchecked read turns into a fault; and a raw-pointer rewrite of vecadd, to see how much of the prologue is the <code>DisjointSlice</code> abstraction versus the codegen itself.</p>
+<hr />
+<p><em>Reproduction, kernels, and the full PTX/SASS artifacts are in the <a href="https://github.com/midiareshadi/cuda-oxide-ptx">repo</a>. The static harness builds each kernel through all three toolchains and runs one shared <code>ptxas</code>; the runtime harness loads the three cubins through one launcher and times them with CUDA events.</em></p>
+            </div>
+        </article>
+    </main>
+
+    <script>
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const main = document.querySelector('.main');
+        const floatingBtn = document.getElementById('floating-toggle');
+        if (sidebar.style.display === 'none') {
+            sidebar.style.display = 'block';
+            main.style.marginLeft = '260px';
+            floatingBtn.style.display = 'none';
+        } else {
+            sidebar.style.display = 'none';
+            main.style.marginLeft = '2rem';
+            floatingBtn.style.display = 'block';
+        }
+    }
+    </script>
+</body>
+</html>
