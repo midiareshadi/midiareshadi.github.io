@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" font-family="Georgia, serif">
+  <rect width="720" height="460" fill="#FBF7EF"/>
+  <text x="360" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#2b2b2b">reduction: the one kernel where speed differs</text>
+  <text x="360" y="63" text-anchor="middle" font-size="13.5" fill="#6b6b6b">Compute-bound. Locked clock (2040 MHz), 50 rounds &#215; 200 reps. Median &#181;s per launch.</text>
+
+  <!-- plot area -->
+  <!-- y baseline at 360; bars scaled so 300us=0px baseline offset, show 300..360 range emphasis -->
+  <!-- We map: value 336..354 -> use a zoomed axis from 320 to 360 us. 1us = 8px. baseline y=380 at 320us. -->
+  <!-- nvcc 337 -> (337-320)*8=136 ; clang 344 ->192 ; oxide 351 ->248 ; rustcuda 354 ->272 -->
+  <line x1="120" y1="380" x2="640" y2="380" stroke="#999" stroke-width="1"/>
+  <text x="110" y="384" text-anchor="end" font-size="11" fill="#888">320</text>
+  <line x1="120" y1="300" x2="640" y2="300" stroke="#eee2cd" stroke-width="1"/>
+  <text x="110" y="304" text-anchor="end" font-size="11" fill="#888">330</text>
+  <line x1="120" y1="220" x2="640" y2="220" stroke="#eee2cd" stroke-width="1"/>
+  <text x="110" y="224" text-anchor="end" font-size="11" fill="#888">340</text>
+  <line x1="120" y1="140" x2="640" y2="140" stroke="#eee2cd" stroke-width="1"/>
+  <text x="110" y="144" text-anchor="end" font-size="11" fill="#888">350</text>
+  <text x="70" y="250" text-anchor="middle" font-size="12" fill="#6b6b6b" transform="rotate(-90 70 250)">&#181;s / launch</text>
+
+  <!-- bars (baseline y=380) -->
+  <!-- nvcc C++ 337 -->
+  <rect x="160" y="244" width="80" height="136" fill="#9c8f74"/>
+  <text x="200" y="398" text-anchor="middle" font-size="12" fill="#444">nvcc</text>
+  <text x="200" y="414" text-anchor="middle" font-size="10.5" fill="#888">C++</text>
+  <text x="200" y="236" text-anchor="middle" font-size="12" font-weight="700" fill="#2b2b2b">337</text>
+  <!-- clang C++ 344 -->
+  <rect x="270" y="188" width="80" height="192" fill="#9c8f74"/>
+  <text x="310" y="398" text-anchor="middle" font-size="12" fill="#444">clang</text>
+  <text x="310" y="414" text-anchor="middle" font-size="10.5" fill="#888">C++</text>
+  <text x="310" y="180" text-anchor="middle" font-size="12" font-weight="700" fill="#2b2b2b">344</text>
+  <!-- oxide Rust 351 -->
+  <rect x="380" y="132" width="80" height="248" fill="#D97757"/>
+  <text x="420" y="398" text-anchor="middle" font-size="12" fill="#444">oxide</text>
+  <text x="420" y="414" text-anchor="middle" font-size="10.5" fill="#888">Rust</text>
+  <text x="420" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#2b2b2b">351</text>
+  <!-- rustcuda Rust 354 -->
+  <rect x="490" y="108" width="80" height="272" fill="#D97757"/>
+  <text x="530" y="398" text-anchor="middle" font-size="12" fill="#444">rustcuda</text>
+  <text x="530" y="414" text-anchor="middle" font-size="10.5" fill="#888">Rust</text>
+  <text x="530" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#2b2b2b">354</text>
+
+  <!-- group brackets -->
+  <text x="255" y="446" text-anchor="middle" font-size="12.5" fill="#2b2b2b">C++ pair: faster</text>
+  <text x="475" y="446" text-anchor="middle" font-size="12.5" fill="#D97757">Rust pair: ~3&#8211;5% slower</text>
+
+  <!-- honesty note moved to the figure caption in the post -->
+</svg>

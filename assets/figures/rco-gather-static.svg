@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 440" font-family="Georgia, serif">
+  <rect width="640" height="440" fill="#FBF7EF"/>
+  <text x="320" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#2b2b2b">gather: PTX instruction count</text>
+  <text x="320" y="65" text-anchor="middle" font-size="13.5" fill="#6b6b6b">The kernel where the emitted code differs most. At runtime, all four were equal (within noise).</text>
+
+  <!-- axis baseline -->
+  <line x1="120" y1="360" x2="560" y2="360" stroke="#999" stroke-width="1"/>
+  <text x="70" y="250" text-anchor="middle" font-size="12" fill="#6b6b6b" transform="rotate(-90 70 250)">PTX instructions</text>
+
+  <!-- scale: 64 -> 240px. baseline y=360 -->
+  <!-- oxide 64 -> 240 -->
+  <rect x="160" y="120" width="70" height="240" fill="#D97757"/>
+  <text x="195" y="380" text-anchor="middle" font-size="12.5" fill="#444">oxide</text>
+  <text x="195" y="112" text-anchor="middle" font-size="13" font-weight="700" fill="#2b2b2b">64</text>
+  <!-- rustcuda 36 -> 135 -->
+  <rect x="255" y="225" width="70" height="135" fill="#b9895f"/>
+  <text x="290" y="380" text-anchor="middle" font-size="12.5" fill="#444">rustcuda</text>
+  <text x="290" y="217" text-anchor="middle" font-size="13" font-weight="700" fill="#2b2b2b">36</text>
+  <!-- clang 25 -> 94 -->
+  <rect x="350" y="266" width="70" height="94" fill="#9c8f74"/>
+  <text x="385" y="380" text-anchor="middle" font-size="12.5" fill="#444">clang</text>
+  <text x="385" y="258" text-anchor="middle" font-size="13" font-weight="700" fill="#2b2b2b">25</text>
+  <!-- nvcc 26 -> 98 -->
+  <rect x="445" y="262" width="70" height="98" fill="#9c8f74"/>
+  <text x="480" y="380" text-anchor="middle" font-size="12.5" fill="#444">nvcc</text>
+  <text x="480" y="254" text-anchor="middle" font-size="13" font-weight="700" fill="#2b2b2b">26</text>
+
+  <text x="320" y="415" text-anchor="middle" font-size="12.5" fill="#6b6b6b">oxide emits ~2.5&#215; the others; rustcuda adds two bounds-check traps for the data-dependent read.</text>
+</svg>
