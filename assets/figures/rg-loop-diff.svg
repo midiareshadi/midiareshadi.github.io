@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 500" font-family="Georgia, serif">
+  <rect width="720" height="500" fill="#FBF7EF"/>
+  <text x="360" y="38" text-anchor="middle" font-size="21" font-weight="700" fill="#2b2b2b">The tree loop, instruction by instruction</text>
+  <text x="360" y="62" text-anchor="middle" font-size="13" fill="#6b6b6b">One loop round in the reduction kernel. The three extras in rust-cuda are all halves of 64-bit operations.</text>
+
+  <!-- left column: nvcc -->
+  <text x="185" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="#2b2b2b">nvcc (C++) &#8212; 10 instructions</text>
+  <g font-family="Menlo, monospace" font-size="11.5" fill="#444">
+    <text x="70" y="128">ISETP  compare tid &lt; s</text>
+    <text x="70" y="150">LEA    address of pair</text>
+    <text x="70" y="172">LDS    load smem[tid]</text>
+    <text x="70" y="194">SHF    s &gt;&gt;= 1</text>
+    <text x="70" y="216">LDS    load smem[tid+s]</text>
+    <text x="70" y="238">FADD   add the pair</text>
+    <text x="70" y="260">STS    store smem[tid]</text>
+    <text x="70" y="282">BAR    barrier (sync)</text>
+    <text x="70" y="304">ISETP  loop test s != 0</text>
+    <text x="70" y="326">BRA    branch back</text>
+  </g>
+
+  <!-- divider -->
+  <line x1="360" y1="90" x2="360" y2="440" stroke="#ddd6c5" stroke-width="1.5"/>
+
+  <!-- right column: rustcuda -->
+  <text x="540" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="#2b2b2b">rust-cuda (Rust) &#8212; 13 instructions</text>
+  <g font-family="Menlo, monospace" font-size="11.5" fill="#444">
+    <text x="420" y="128">ISETP  compare tid &lt; s (low half)</text>
+    <text x="420" y="150" fill="#D97757" font-weight="700">ISETP.EX  &#8593; upper half (64-bit)</text>
+    <text x="420" y="172">IMAD   address of pair</text>
+    <text x="420" y="194">LDS    load smem[tid]</text>
+    <text x="420" y="216">SHF    s &gt;&gt;= 1 (low half)</text>
+    <text x="420" y="238" fill="#D97757" font-weight="700">SHF.HI    &#8593; upper half (64-bit)</text>
+    <text x="420" y="260">LDS    load smem[tid+s]</text>
+    <text x="420" y="282">FADD   add the pair</text>
+    <text x="420" y="304">STS    store smem[tid]</text>
+    <text x="420" y="326">BAR    barrier (sync)</text>
+    <text x="420" y="348">ISETP  loop test (low half)</text>
+    <text x="420" y="370" fill="#D97757" font-weight="700">ISETP.EX  &#8593; upper half (64-bit)</text>
+    <text x="420" y="392">BRA    branch back</text>
+  </g>
+
+  <text x="360" y="465" text-anchor="middle" font-size="12.5" fill="#2b2b2b" font-weight="700">Every compare and shift on a 64-bit number costs two instructions instead of one.</text>
+  <text x="360" y="486" text-anchor="middle" font-size="11.5" fill="#888">Simplified listing: instruction order and pairing follow the committed SASS; scheduling details omitted for readability.</text>
+</svg>

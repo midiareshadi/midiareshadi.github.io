@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" font-family="Georgia, serif">
+  <rect width="720" height="460" fill="#FBF7EF"/>
+  <text x="360" y="38" text-anchor="middle" font-size="21" font-weight="700" fill="#2b2b2b">Runtime: the gap closes</text>
+  <text x="360" y="62" text-anchor="middle" font-size="13" fill="#6b6b6b">Median &#181;s per launch, L4, clock locked at 2040 MHz, 50 rounds &#215; 200 reps. Lower is faster.</text>
+
+  <!-- gridlines: axis 310..350, 1us = 6px, baseline y=390 at 310 -->
+  <line x1="90" y1="390" x2="660" y2="390" stroke="#999" stroke-width="1"/>
+  <text x="82" y="394" text-anchor="end" font-size="11" fill="#888">310</text>
+  <line x1="90" y1="330" x2="660" y2="330" stroke="#eee2cd" stroke-width="1"/>
+  <text x="82" y="334" text-anchor="end" font-size="11" fill="#888">320</text>
+  <line x1="90" y1="270" x2="660" y2="270" stroke="#eee2cd" stroke-width="1"/>
+  <text x="82" y="274" text-anchor="end" font-size="11" fill="#888">330</text>
+  <line x1="90" y1="210" x2="660" y2="210" stroke="#eee2cd" stroke-width="1"/>
+  <text x="82" y="214" text-anchor="end" font-size="11" fill="#888">340</text>
+  <line x1="90" y1="150" x2="660" y2="150" stroke="#eee2cd" stroke-width="1"/>
+  <text x="82" y="154" text-anchor="end" font-size="11" fill="#888">350</text>
+  <text x="45" y="270" text-anchor="middle" font-size="12" fill="#6b6b6b" transform="rotate(-90 45 270)">&#181;s / launch</text>
+
+  <!-- BEFORE: nvcc 325 -> h=90 y=300 ; clang 332.5 -> h=135 y=255 ; oxide 339.6 -> h=178 y=212 ; rustcuda 343.5 -> h=201 y=189 -->
+  <text x="230" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#2b2b2b">usize loop (before)</text>
+  <rect x="110" y="300" width="52" height="90" fill="#9c8f74"/>
+  <text x="136" y="408" text-anchor="middle" font-size="11" fill="#444">nvcc</text>
+  <text x="136" y="294" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2b2b">325</text>
+  <rect x="172" y="255" width="52" height="135" fill="#9c8f74"/>
+  <text x="198" y="408" text-anchor="middle" font-size="11" fill="#444">clang</text>
+  <text x="198" y="249" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2b2b">332</text>
+  <rect x="234" y="212" width="52" height="178" fill="#D97757"/>
+  <text x="260" y="408" text-anchor="middle" font-size="11" fill="#444">oxide</text>
+  <text x="260" y="206" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2b2b">340</text>
+  <rect x="296" y="189" width="52" height="201" fill="#D97757"/>
+  <text x="322" y="408" text-anchor="middle" font-size="11" fill="#444">rustcuda</text>
+  <text x="322" y="183" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2b2b">344</text>
+
+  <line x1="368" y1="95" x2="368" y2="420" stroke="#ddd6c5" stroke-width="1.5"/>
+
+  <!-- AFTER: nvcc 332 -> h=132 y=258 ; clang 338 -> h=168 y=222 ; oxide 324.8 -> h=89 y=301 ; rustcuda 321.6 -> h=70 y=320 -->
+  <text x="510" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#2b2b2b">u32 loop (after)</text>
+  <rect x="390" y="258" width="52" height="132" fill="#9c8f74"/>
+  <text x="416" y="408" text-anchor="middle" font-size="11" fill="#444">nvcc</text>
+  <text x="416" y="252" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2b2b">332</text>
+  <rect x="452" y="222" width="52" height="168" fill="#9c8f74"/>
+  <text x="478" y="408" text-anchor="middle" font-size="11" fill="#444">clang</text>
+  <text x="478" y="216" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2b2b">338</text>
+  <rect x="514" y="301" width="52" height="89" fill="#D97757"/>
+  <text x="540" y="408" text-anchor="middle" font-size="11" fill="#444">oxide</text>
+  <text x="540" y="295" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2b2b">325</text>
+  <rect x="576" y="320" width="52" height="70" fill="#D97757"/>
+  <text x="602" y="408" text-anchor="middle" font-size="11" fill="#444">rustcuda</text>
+  <text x="602" y="314" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2b2b2b">322</text>
+
+  <text x="360" y="443" text-anchor="middle" font-size="13" font-weight="700" fill="#2b2b2b">Before: both Rust versions last. After: both Rust versions first.</text>
+</svg>

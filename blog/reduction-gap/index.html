@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Found it: the Rust GPU speed gap was a 64-bit loop counter — Midia Reshadi</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="floating-toggle" onclick="toggleSidebar()" style="
+        position:fixed; top:1rem; left:1rem; z-index:1000;
+        background:none; border:none; cursor:pointer;
+        padding:4px; color:#D97757; display:none;
+    " title="Show sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+    </button>
+        <aside class="sidebar">
+        <div style="margin-bottom:1.5rem;">
+            <button onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:0; color:#D97757; line-height:1; display:block; margin-bottom:10px;" title="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            </button>
+            <p style="font-size:17px; font-weight:700; color:#D97757; margin:0; white-space:nowrap; font-family:"Playfair Display", Georgia, serif;">&#9998; Midia Reshadi's Blog</p>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="../../index.html">&#8962; Home</a></li>
+        </ul>
+        <div class="sidebar-links">
+            <a href="https://github.com/midiareshadi" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+            </a>
+            <a href="https://www.linkedin.com/in/midia-reshadi/" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                LinkedIn
+            </a>
+            <a href="https://scholar.google.com/citations?user=gVWj19kAAAAJ&hl=en" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+                Google Scholar
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <article>
+            <header class="post-header">
+                <h1>Found it: the Rust GPU speed gap was a 64-bit loop counter</h1>
+                <p class="post-meta">July 2026 &middot; ~10 min read &middot;
+                    <a href="https://github.com/midiareshadi/reduction-gap">code</a>
+                </p>
+            </header>
+
+            <div class="post-content">
+
+<h2>The short version</h2>
+<ul>
+<li>In my <a href="../rust-cuda-vs-oxide/index.html">previous post</a> I compared four GPU compilers on the same kernels: two Rust compilers (cuda-oxide, rust-cuda) and two C++ compilers (clang, nvcc).</li>
+<li>On the compute-heavy reduction kernel, both C++ versions were about 3 to 5 percent faster than both Rust versions. I said, honestly, that I did not know the cause.</li>
+<li>This post finds the cause. It was not "Rust". It was not the compiler backend. It was one small thing: the <strong>loop counter was 64-bit in Rust and 32-bit in C++</strong>.</li>
+<li>I changed three lines in each Rust kernel &#8212; the loop counter type from <code>usize</code> to <code>u32</code> &#8212; and the gap disappeared completely. The Rust versions now run at the same speed as nvcc.</li>
+<li>The practical lesson for anyone writing GPU kernels in Rust: <strong>keep the index of a hot loop 32-bit</strong>. Use <code>u32</code> for the loop, and convert to <code>usize</code> only at the memory access.</li>
+</ul>
+
+<h2>Where this comes from</h2>
+<p>My previous post ended with an open question. The reduction kernel (a shared-memory tree sum) was the one place where the four compilers did not run at the same speed. With a locked GPU clock and many repeats, the two C++ versions were always ahead by 3 to 5 percent, and the two Rust versions were always behind, together.</p>
+<p>I could see the pattern but not the cause. It lined up with the language (both C++ ahead, both Rust behind). But I did not want to publish "Rust is slower" without knowing <em>why</em>. So I wrote "cause not established" and left it open.</p>
+<p>This post closes that question. The method has four steps: read the machine code, form a hypothesis, change one thing, and measure again.</p>
+
+<h2>Step 1: read the machine code</h2>
+<p>The GPU does not run PTX directly. PTX is assembled into SASS &#8212; the real machine instructions. I had the SASS of all four reduction versions already saved in the repo, so I compared the fastest (nvcc) against the slowest (rust-cuda), loop against loop.</p>
+<p>The reduction kernel spends its time in one small loop: the "tree" that repeatedly halves a stride value and adds pairs of numbers in shared memory. In that loop:</p>
+<ul>
+<li><strong>nvcc: 10 instructions per loop round.</strong> All the index math is 32-bit.</li>
+<li><strong>rust-cuda: 13 instructions per loop round.</strong> The three extra instructions are all the same kind: they are the <strong>upper halves of 64-bit operations</strong>. One extra compare, one extra shift, one extra loop test.</li>
+</ul>
+<p>Here is the key idea, said simply: the GPU works on 32-bit numbers natively. A compare or a shift on a 64-bit number costs <strong>two</strong> instructions instead of one &#8212; one for the lower half, one for the upper half. So a loop that does its counting in 64-bit pays roughly double for every compare and shift.</p>
+
+<div class="figure">
+    <img src="../../assets/figures/rg-loop-diff.svg" alt="The reduction tree loop instruction by instruction: nvcc 10 instructions, rust-cuda 13, with the three extras highlighted as upper halves of 64-bit operations">
+    <p class="figure-caption">One round of the tree loop, instruction by instruction. The three extras in rust-cuda (orange) are the upper halves of 64-bit operations: a compare, a shift, and the loop test. The listing is simplified for readability; order and pairing follow the committed SASS.</p>
+</div>
+
+<p>I checked the other two compilers as a cross-check. cuda-oxide (the other Rust compiler) had the same extra 64-bit instructions in its loop. clang and nvcc (the two C++ compilers) had <strong>zero</strong> 64-bit operations in the whole kernel.</p>
+
+<h2>Step 2: the hypothesis</h2>
+<p>Why is the Rust loop 64-bit and the C++ loop 32-bit? Because of what each language makes natural to write.</p>
+<p>In Rust, the natural type for indexes and lengths is <code>usize</code>, which is 64-bit on this platform. Both Rust kernels wrote the loop like this:</p>
+<pre><code class="language-rust">let mut s = (block_dim_x() / 2) as usize;   // 64-bit
+while s &gt; 0 { ... s &gt;&gt;= 1; }</code></pre>
+<p>In C++, the habitual loop counter is <code>unsigned int</code>, which is 32-bit:</p>
+<pre><code>for (unsigned int s = blockDim.x / 2; s &gt; 0; s &gt;&gt;= 1) { ... }</code></pre>
+<p>Same algorithm. Each version written in its own language's normal style. But one counts in 64-bit and the other in 32-bit.</p>
+<p>The numbers also fit: 3 extra instructions, times 8 loop rounds (a block of 256 threads halves 8 times), inside a loop of roughly 80 to 100 instructions total &#8212; that is the right size for a 3 to 5 percent gap.</p>
+<p>But "the instructions are there" is not proof that they cost time. GPUs are good at hiding small amounts of extra work. So the hypothesis needed a real test.</p>
+
+<h2>Step 3: the experiment &#8212; change one thing</h2>
+<p>I made a copy of both Rust kernels with one change: the loop counter stays <code>u32</code> (32-bit) through the whole loop, and is converted to <code>usize</code> only at each memory access. That conversion at the access is free &#8212; it is what C++ does implicitly anyway. The change is three lines per kernel. Everything else is byte-identical.</p>
+<p>Two details that make the experiment trustworthy:</p>
+<ul>
+<li><strong>I left one 64-bit check in on purpose.</strong> The guard at the top of the kernel (<code>gid &lt; input.len()</code>) runs only once per thread, so it cannot explain a per-round loop cost. I kept it as <code>usize</code> as a control. The prediction: the loop's 64-bit instructions disappear, and this one stays. If both disappeared, my edit would have changed more than I intended.</li>
+<li><strong>I wrote the prediction down before running anything.</strong> The 64-bit instruction count should drop to exactly the one control remnant, the instruction totals should shrink to match nvcc, and &#8212; if the hypothesis is the whole story &#8212; the runtime gap should close.</li>
+</ul>
+
+<h2>Step 4: the result</h2>
+<p><strong>The machine code, after the change:</strong></p>
+<ul>
+<li>64-bit operations: rust-cuda dropped from 4 to 1, cuda-oxide from 6 to 1. The single remaining one is the control guard, exactly as predicted.</li>
+<li>Total SASS instructions: both Rust versions went from 56 to <strong>48 &#8212; exact parity with nvcc</strong>. The entire instruction-count difference between the Rust and C++ reductions was the 64-bit index math. Nothing else.</li>
+</ul>
+
+<div class="figure">
+    <img src="../../assets/figures/rg-sass-counts.svg" alt="SASS instruction totals before and after: 48/48/56/56 becomes 48/48/48/48">
+    <p class="figure-caption">Whole-kernel SASS instruction counts. The C++ versions are unchanged between the two groups; only the Rust loop index changed. After the change: exact parity, 48 across the board.</p>
+</div>
+
+<p><strong>The runtime (L4, clock locked at 2040 MHz, 50 rounds &#215; 200 repeats):</strong></p>
+<table>
+<thead>
+<tr><th>version</th><th>usize loop (before)</th><th>u32 loop (after)</th><th>change</th></tr>
+</thead>
+<tbody>
+<tr><td>nvcc (C++)</td><td>325 &#181;s</td><td>332 &#181;s</td><td>+7 (noise)</td></tr>
+<tr><td>clang (C++)</td><td>332 &#181;s</td><td>338 &#181;s</td><td>+6 (noise)</td></tr>
+<tr><td>cuda-oxide (Rust)</td><td>340 &#181;s</td><td><strong>325 &#181;s</strong></td><td><strong>&#8722;15</strong></td></tr>
+<tr><td>rust-cuda (Rust)</td><td>344 &#181;s</td><td><strong>322 &#181;s</strong></td><td><strong>&#8722;22</strong></td></tr>
+</tbody>
+</table>
+<p>The C++ rows compile the same source code both times &#8212; their small movement is the normal run-to-run noise, a few microseconds. The Rust improvement (15 to 22 microseconds) is far above that noise.</p>
+
+<div class="figure">
+    <img src="../../assets/figures/rg-runtime.svg" alt="Runtime bars before and after: Rust versions go from last to first">
+    <p class="figure-caption">Median time per launch, before and after. Note: the axis starts at 310 &#181;s to make the small gap visible. Before the change, both Rust versions are last; after it, both are first &#8212; within the run-to-run noise of nvcc, so the honest statement is "the gap is gone", not "Rust is now faster".</p>
+</div>
+
+<p>The gap is gone. With a 32-bit loop counter, both Rust versions run at nvcc's speed. I repeated the measurement in several independent sessions, with machine restarts in between; the ordering was the same every time.</p>
+
+<h2>What this means</h2>
+<p>The published gap was never "Rust is slower than C++ on the GPU". On this kernel, with a 32-bit loop counter, Rust runs at the same speed as C++. What the gap really was: <strong>a 64-bit loop counter is slower than a 32-bit one, in a loop hot enough for it to matter</strong> &#8212; and Rust's natural style produces the 64-bit one, while C++'s natural style produces the 32-bit one. An idiom cost, not a language cost.</p>
+<p>The fix is small and safe here: the loop stride in this kernel is at most half the block size (so at most 512), which always fits in 32 bits.</p>
+<p>Practical advice if you write GPU kernels in Rust:</p>
+<ul>
+<li>Keep the counter of a hot loop as <code>u32</code>.</li>
+<li>Convert to <code>usize</code> only at the memory access: <code>smem[(tid + s) as usize]</code>.</li>
+<li>This costs nothing and reads almost the same.</li>
+</ul>
+
+<h2>Honest limits</h2>
+<ul>
+<li>The advice is about the <strong>block-local loop stride</strong>, which fits 32 bits by construction. A global index over a very large array may genuinely need 64 bits. This finding does not say "never use usize".</li>
+<li>One kernel, one GPU (L4), one block size. The mechanism (64-bit integer operations cost about double on the GPU) is general, but my measured percentage is specific to this setup.</li>
+<li>Both Rust compilers are early-stage projects. A future version could remove this cost automatically, by proving the counter fits in 32 bits and narrowing it. If that happens, this post becomes a historical note &#8212; which would be a good outcome.</li>
+</ul>
+
+<h2>Reproduce it</h2>
+<p>The kernels, the before/after machine code, the harness, and the CSV results are in the repo: <a href="https://github.com/midiareshadi/reduction-gap">github.com/midiareshadi/reduction-gap</a>. The kernels and harness originate from my previous study (<a href="https://github.com/midiareshadi/rust-cuda-vs-oxide">rust-cuda-vs-oxide</a>); this repo isolates the reduction investigation.</p>
+
+            </div>
+        </article>
+    </main>
+</body>
+</html>

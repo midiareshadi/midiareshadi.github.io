@@ -50,6 +50,23 @@
             <li class="post-item">
                 <p class="post-date">July 2026</p>
                 <p class="post-title">
+                    <a href="/blog/reduction-gap/">
+                        Found it: the Rust GPU speed gap was a 64-bit loop counter
+                    </a>
+                </p>
+                <p class="post-desc">
+                    Follow-up to the 2×2 study, which left a ~3–5% Rust deficit on the reduction kernel as "cause not established". Reading the SASS pointed at 64-bit (usize) loop indexing; a three-line u32 change removes the gap completely. 3 figures.
+                </p>
+                <div class="post-tags">
+                    <span class="tag">SASS</span>
+                    <span class="tag">rust-cuda</span>
+                    <span class="tag">cuda-oxide</span>
+                    <span class="tag">performance</span>
+                </div>
+            </li>
+            <li class="post-item">
+                <p class="post-date">July 2026</p>
+                <p class="post-title">
                     <a href="/blog/rust-cuda-vs-oxide/">
                         Language or backend? Adding rust-cuda to my GPU code comparison
                     </a>

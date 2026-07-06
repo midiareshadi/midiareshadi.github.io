@@ -136,6 +136,9 @@
 <li><strong>I did not prove the cause.</strong> The gap lines up with language (both C++ ahead of both Rust). But I cannot yet say <em>why</em>. It could be the kernel code, or a smaller detail like the extra length arguments that Rust slices pass to the kernel. More work is needed to find the real cause. I am not claiming one.</li>
 </ul>
 
+<p><em><strong>Update (July 2026):</strong> the cause is now found — it was a 64-bit loop counter. See the follow-up post: <a href="../reduction-gap/index.html">Found it: the Rust GPU speed gap was a 64-bit loop counter</a>.</em></p>
+
+
 <h2>What is new here, and what was already known</h2>
 <p>I want to be clear and fair about this.</p>
 <p>Already known:</p>
