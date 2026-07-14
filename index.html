@@ -50,6 +50,23 @@
             <li class="post-item">
                 <p class="post-date">July 2026</p>
                 <p class="post-title">
+                    <a href="/blog/oxide-moving-target/">
+                        Benchmarking a moving target: my cuda-oxide results changed in weeks
+                    </a>
+                </p>
+                <p class="post-desc">
+                    A follow-up to my cuda-oxide study. Re-testing weeks later, two of three findings had changed — and one change dropped a safe-indexing bounds check, so safe Rust code reads out of bounds (confirmed by compute-sanitizer, reported as cuda-oxide #396). Also: why the version tag does not pin the compiler. 3 figures.
+                </p>
+                <div class="post-tags">
+                    <span class="tag">cuda-oxide</span>
+                    <span class="tag">safety</span>
+                    <span class="tag">PTX</span>
+                    <span class="tag">reproducibility</span>
+                </div>
+            </li>
+            <li class="post-item">
+                <p class="post-date">July 2026</p>
+                <p class="post-title">
                     <a href="/blog/reduction-gap/">
                         Found it: the Rust GPU speed gap was a 64-bit loop counter
                     </a>

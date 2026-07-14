@@ -104,6 +104,8 @@
 </ul>
 <p>So "generic addressing" does not follow the Rust row or the upstream-LLVM column. It is specific to cuda-oxide's own lowering. My previous post saw the generic loads but could not rule out "Rust" or "upstream LLVM" as the cause. Now I can: it is neither.</p>
 
+<p><em><strong>Update (July 2026):</strong> this finding has since changed. On a newer cuda-oxide backend, the generic loads became global loads (matching the other three compilers), so this addressing difference no longer holds. Re-testing also revealed a dropped bounds check that lets safe Rust code read out of bounds. See the follow-up: <a href="../oxide-moving-target/index.html">Benchmarking a moving target</a>.</em></p>
+
 <h2>Finding 2: the two Rust compilers make opposite safety choices</h2>
 <p>This is the clearest new result in this post.</p>
 <p>In Rust, reading <code>a[i]</code> includes a bounds check. If <code>i</code> is out of range, normal Rust panics. On a GPU there is no panic, so the check becomes a <code>trap</code> instruction (it stops the thread).</p>
