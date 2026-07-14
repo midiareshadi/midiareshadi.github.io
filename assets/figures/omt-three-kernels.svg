@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" font-family="Georgia, serif">
+  <rect width="720" height="400" fill="#FBF7EF"/>
+  <text x="360" y="38" text-anchor="middle" font-size="21" font-weight="700" fill="#2b2b2b">What changed, across three kernels</text>
+  <text x="360" y="62" text-anchor="middle" font-size="13" fill="#6b6b6b">Older build (June, v0.2.0) vs newer build (July development branch).</text>
+
+  <!-- Table -->
+  <!-- header row -->
+  <line x1="40" y1="90" x2="680" y2="90" stroke="#c9bda1" stroke-width="1.5"/>
+  <text x="60"  y="112" font-size="13" font-weight="700" fill="#2b2b2b">what</text>
+  <text x="290" y="112" font-size="13" font-weight="700" fill="#2b2b2b" text-anchor="middle">vecadd</text>
+  <text x="410" y="112" font-size="13" font-weight="700" fill="#2b2b2b" text-anchor="middle">gather</text>
+  <text x="540" y="112" font-size="13" font-weight="700" fill="#2b2b2b" text-anchor="middle">reduction</text>
+  <line x1="40" y1="124" x2="680" y2="124" stroke="#c9bda1" stroke-width="1"/>
+
+  <!-- row 1: addressing -->
+  <text x="60" y="152" font-size="12.5" fill="#444">memory addresses</text>
+  <text x="290" y="152" text-anchor="middle" font-size="12.5" fill="#2e7d52">generic&#8594;global</text>
+  <text x="410" y="152" text-anchor="middle" font-size="12.5" fill="#2e7d52">generic&#8594;global</text>
+  <text x="540" y="152" text-anchor="middle" font-size="12.5" fill="#2e7d52">generic&#8594;global</text>
+
+  <!-- row 2: size -->
+  <text x="60" y="188" font-size="12.5" fill="#444">code size</text>
+  <text x="290" y="188" text-anchor="middle" font-size="12.5" fill="#2e7d52">64&#8594;37 (smaller)</text>
+  <text x="410" y="188" text-anchor="middle" font-size="12.5" fill="#2e7d52">64&#8594;37 (smaller)</text>
+  <text x="540" y="188" text-anchor="middle" font-size="12.5" fill="#8a7a4a">47&#8594;55 (setup)</text>
+
+  <!-- row 3: safety -->
+  <text x="60" y="224" font-size="12.5" fill="#444">bounds check</text>
+  <text x="290" y="224" text-anchor="middle" font-size="12.5" fill="#999">&#8212;</text>
+  <text x="410" y="224" text-anchor="middle" font-size="12.5" fill="#c0392b" font-weight="700">2&#8594;0 (dropped)</text>
+  <text x="540" y="224" text-anchor="middle" font-size="12.5" fill="#999">&#8212;</text>
+
+  <line x1="40" y1="244" x2="680" y2="244" stroke="#c9bda1" stroke-width="1"/>
+
+  <!-- legend -->
+  <circle cx="60" cy="278" r="5" fill="#2e7d52"/>
+  <text x="72" y="282" font-size="12" fill="#444">improved</text>
+  <circle cx="200" cy="278" r="5" fill="#8a7a4a"/>
+  <text x="212" y="282" font-size="12" fill="#444">bigger, but one-time setup</text>
+  <circle cx="440" cy="278" r="5" fill="#c0392b"/>
+  <text x="452" y="282" font-size="12" fill="#444">safety check removed</text>
+
+  <text x="360" y="330" text-anchor="middle" font-size="13" fill="#2b2b2b" font-weight="700">Addressing improved everywhere. Size is mixed. One safety check was dropped.</text>
+  <text x="360" y="354" text-anchor="middle" font-size="12" fill="#888">Numbers are PTX instruction counts. The gather bounds check is the important change.</text>
+</svg>

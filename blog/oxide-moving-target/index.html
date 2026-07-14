@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmarking a moving target: my cuda-oxide results changed in weeks — Midia Reshadi</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+      .post-content p { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+    </style>
+</head>
+<body>
+    <button id="floating-toggle" onclick="toggleSidebar()" style="
+        position:fixed; top:1rem; left:1rem; z-index:1000;
+        background:none; border:none; cursor:pointer;
+        padding:4px; color:#D97757; display:none;
+    " title="Show sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+    </button>
+        <aside class="sidebar">
+        <div style="margin-bottom:1.5rem;">
+            <button onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:0; color:#D97757; line-height:1; display:block; margin-bottom:10px;" title="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            </button>
+            <p style="font-size:17px; font-weight:700; color:#D97757; margin:0; white-space:nowrap; font-family:"Playfair Display", Georgia, serif;">&#9998; Midia Reshadi's Blog</p>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="../../index.html">&#8962; Home</a></li>
+        </ul>
+        <div class="sidebar-links">
+            <a href="https://github.com/midiareshadi" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+            </a>
+            <a href="https://www.linkedin.com/in/midia-reshadi/" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                LinkedIn
+            </a>
+            <a href="https://scholar.google.com/citations?user=gVWj19kAAAAJ&hl=en" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+                Google Scholar
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <article>
+            <header class="post-header">
+                <h1>Benchmarking a moving target: my cuda-oxide results changed in weeks</h1>
+                <p class="post-meta">July 2026 &middot; ~9 min read &middot;
+                    <a href="https://github.com/midiareshadi/oxide-moving-target">code</a> &middot;
+                    <a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>
+                </p>
+            </header>
+
+            <div class="post-content">
+
+<h2>The short version</h2>
+<ul>
+<li>A few weeks ago I <a href="../rust-cuda-vs-oxide/index.html">compared cuda-oxide</a> (a Rust-to-GPU compiler) against three other compilers. I wrote down what its GPU code looked like.</li>
+<li>I re-ran the same test recently. <strong>Two of my three findings had changed.</strong> The tool now makes better memory addresses and, for simple kernels, much smaller code.</li>
+<li>But one change was different in kind: <strong>a safety check disappeared.</strong> Code that used to stop a bad array read now reads memory out of bounds instead. I reported this to the project (<a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>).</li>
+<li>There is also a trap I did not expect: <strong>the version number does not tell you which compiler you have.</strong> The part that makes the GPU code is downloaded fresh from the latest development branch, not from the version you asked for.</li>
+<li>The lesson: record the exact version of your tools when you measure &#8212; good practice for any benchmark, and especially here, where the version tag does not pin the backend. And re-check your old findings before you trust them.</li>
+</ul>
+
+<h2>Why I re-tested</h2>
+<p>My <a href="../rust-cuda-vs-oxide/index.html">earlier post</a> compared four GPU compilers on three small kernels. cuda-oxide is an early "alpha" project &#8212; it says so itself, and it changes fast. I wanted to see what a newer version did differently. This should have been a simple "old version vs new version" comparison. It was not simple, and that is the story.</p>
+
+<h2>The trap: the version tag does not pin the compiler</h2>
+<p>cuda-oxide has two parts:</p>
+<ul>
+<li>The <strong>front part</strong> (<code>cargo-oxide</code>) &#8212; the command you run. This has version numbers, like v0.2.0 and v0.2.1.</li>
+<li>The <strong>back part</strong> (the "backend") &#8212; the part that actually turns Rust into GPU code. This is what matters for my tests.</li>
+</ul>
+<p>Here is the surprise. When you install a specific version of the front part, it then downloads the back part from the <strong>latest development branch</strong> &#8212; not from the version you picked. I checked this directly: I installed v0.2.0 and, separately, v0.2.1. Both downloaded the <strong>same</strong> back part (the same commit, dated July 4).</p>
+
+<div class="figure">
+    <img src="../../assets/figures/omt-provenance-trap.svg" alt="Two version tags both fetch the same backend commit from the latest branch">
+    <p class="figure-caption">The front part is version-tagged, but it downloads the back part from the latest branch. So two version tags can give you the same backend &#8212; or different ones on different days.</p>
+</div>
+
+<p>So "cuda-oxide v0.2.1" does not tell you which compiler you have. Two people who both install "v0.2.1" on different days can get different GPU code. The only thing that truly identifies the compiler is the <strong>backend commit and its date</strong>.</p>
+<p>This matters for my old post: I never wrote down the backend commit in June. So I cannot say exactly which compiler made my old results. That gap is part of the lesson.</p>
+<p>So in this post I do not say "version 0.2.0" or "version 0.2.1" as the real names, because those tags do not identify the compiler. Instead I name each compiler by its backend commit &#8212; a commit in cuda-oxide's own code repository. I call them the <strong>older build</strong> (commit <code>faea395</code>, released as v0.2.0 on June 5) and the <strong>newer build</strong> (commit <code>29396b7</code>, taken from the development branch on July 4). These commits are the real, exact names.</p>
+
+<h2>What changed on the three kernels</h2>
+<p>I rebuilt all three kernels (vecadd, gather, reduction) on the newer build and compared to the older one.</p>
+
+<p><strong>1. Memory addresses: better everywhere.</strong> In the older build, cuda-oxide used generic memory addresses (a slower, less specific form). In the newer build, all three kernels use global addresses &#8212; the same clear form the C++ compilers use. This is a clear improvement, and it means one of my old findings ("cuda-oxide is the only one using generic addresses") is now out of date.</p>
+<p><strong>2. Code size: mixed.</strong> Two kernels (vecadd, gather) got much smaller &#8212; about 42% fewer instructions. But the reduction kernel got a little bigger. The extra instructions there are one-time loop setup, not the main work, so this is likely fine. So "smaller" is not a simple yes for every kernel.</p>
+<p><strong>3. A safety check disappeared.</strong> This is the important one, so it gets its own section.</p>
+
+<div class="figure">
+    <img src="../../assets/figures/omt-three-kernels.svg" alt="Table: addressing improved on all three kernels; size mixed; gather bounds check dropped">
+    <p class="figure-caption">Older build vs newer build across the three kernels. Addressing improved everywhere; size is mixed; the gather bounds check was dropped.</p>
+</div>
+
+<h2>The safety check that disappeared</h2>
+<p>The gather kernel does <code>out[i] = src[indices[i]]</code>. It reads a position from <code>indices</code>, then uses that number to read from <code>src</code>. The number comes from memory at run time, so the compiler cannot know in advance if it is inside <code>src</code>. In safe Rust, this read must be checked: if the number is too big, the program must not read past the end of the array.</p>
+<p>The older build added this check. If the index was out of range, the GPU thread stopped safely and did not do the bad read.</p>
+<p><strong>The newer build removed it.</strong> The kernel now reads <code>src[index]</code> with no check at all.</p>
+<p>To be sure this was real, I ran a test: I set one index to 1,000,000, into an array with only 1,024 elements. Then I ran the exact same program on both builds, and I checked each with NVIDIA's own memory checker (<code>compute-sanitizer</code>).</p>
+<ul>
+<li><strong>The older build (June, v0.2.0):</strong> the memory checker reported <strong>0 errors</strong>. The bad index was caught; the program was safe.</li>
+<li><strong>The newer build (July, development branch):</strong> the memory checker reported an <strong>invalid read</strong> &#8212; the program read memory about 4 megabytes past the end of the array. NVIDIA's tool confirmed it.</li>
+</ul>
+
+<div class="figure">
+    <img src="../../assets/figures/omt-safety-contrast.svg" alt="Same program: older build 0 errors, newer build invalid out-of-bounds read">
+    <p class="figure-caption">The same safe-Rust program with one out-of-range index. The older build guards the access (0 errors); the newer build reads ~4 MB out of bounds (invalid read). Reported as issue #396.</p>
+</div>
+
+<p>Same safe-Rust program. One build is safe. The other reads memory it should not.</p>
+<p>I want to be fair here: cuda-oxide is an early alpha, and moving fast is what an alpha should do. This is not a criticism of the project. But a missing bounds check is worth reporting, so I reported it: <a href="https://github.com/NVlabs/cuda-oxide/issues/396">cuda-oxide issue #396</a>. I also bisected it &#8212; rebuilding old backend commits one by one &#8212; and found the change landed within about a week of the v0.2.0 release.</p>
+<p>A short, honest note: the bounds check on the <em>output</em> slice (a different, "witness" style of access) still works. It is specifically the plain <code>src[index]</code> read that lost its check.</p>
+
+<h2>The lesson</h2>
+<p>Testing an early-stage compiler is like aiming at a moving target. What I learned:</p>
+<ul>
+<li><strong>Record the exact version of your tools when you measure</strong> &#8212; precisely enough to reproduce it. This is good practice for any benchmark. It matters even more for a tool like cuda-oxide, where the version tag does not pin the backend: the part that generates code tracks the latest branch, so "v0.2.1" alone is not a reproducible coordinate.</li>
+<li><strong>Re-check old findings before trusting them.</strong> Two of my three findings changed in a few weeks.</li>
+<li><strong>Watch safety-critical code closely.</strong> A bounds check can appear or disappear between commits. If you rely on it, verify it is still there &#8212; every time.</li>
+</ul>
+<p>None of this is a knock on cuda-oxide. Fast movement is what an alpha should do. The lesson is about how <em>we</em> test and cite fast-moving tools.</p>
+
+<h2>Reproduce it</h2>
+<p>The kernels, the before/after GPU code, the safety test, and both memory-checker logs are in the repo: <a href="https://github.com/midiareshadi/oxide-moving-target">github.com/midiareshadi/oxide-moving-target</a>. The kernels come from my earlier study (<a href="../rust-cuda-vs-oxide/index.html">rust-cuda-vs-oxide</a>); this repo adds the July rebuild and the safety test.</p>
+
+            </div>
+        </article>
+    </main>
+</body>
+</html>
