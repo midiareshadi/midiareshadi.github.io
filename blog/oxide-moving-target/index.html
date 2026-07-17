@@ -64,11 +64,19 @@
 
             <div class="post-content">
 
+<div style="border-left:3px solid #D97757; padding:0.6rem 0 0.6rem 1rem; margin:0 0 1.5rem 0; background:#fdf6f2;">
+<p style="margin:0;"><em><strong>Update (July 2026) &#8212; the real cause, and the fix.</strong> Within hours of my report, a cuda-oxide developer diagnosed the bug in <a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>, and their explanation corrects part of the story below.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>An out-of-bounds Rust index becomes a MIR "assert" whose failure branch was translated into LLVM's <code>unreachable</code>. But in LLVM, <code>unreachable</code> does not mean "stop here" &#8212; it means "control can never get here". So when the newer pipeline added an <code>opt -O2</code> step, the optimizer did what that promise allows: it folded the check into <code>llvm.assume(j &lt; len)</code> and deleted the branch. The out-of-bounds read follows.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>So the check was never lowered correctly. <strong>The older build was not safe by design &#8212; it was safe by accident</strong>, because it had no <code>opt -O2</code> to exploit the mistake. My "a safety check was removed" framing was wrong: the bug was always there, and the optimizer only exposed it.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>A fix followed the same day (<a href="https://github.com/NVlabs/cuda-oxide/pull/405">PR #405</a>): emit a real <code>trap</code> before the <code>unreachable</code>, so the optimizer cannot delete the check. I verified it on my L4 (sm_89): both bounds guards return to the PTX, each abort path carries a <code>trap</code>, and the out-of-bounds read is gone &#8212; the kernel traps instead.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>I am leaving the original text below unchanged. If anything, this makes the lesson stronger: the older build's safety was luck, not a guarantee &#8212; which is exactly why you should verify safety-critical code generation yourself, every time.</em></p>
+</div>
+
 <h2>The short version</h2>
 <ul>
 <li>A few weeks ago I <a href="../rust-cuda-vs-oxide/index.html">compared cuda-oxide</a> (a Rust-to-GPU compiler) against three other compilers. I wrote down what its GPU code looked like.</li>
 <li>I re-ran the same test recently. <strong>Two of my three findings had changed.</strong> The tool now makes better memory addresses and, for simple kernels, much smaller code.</li>
-<li>But one change was different in kind: <strong>a safety check disappeared.</strong> Code that used to stop a bad array read now reads memory out of bounds instead. I reported this to the project (<a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>).</li>
+<li>But one change was different in kind: <strong>a safety check disappeared.</strong> Code that used to stop a bad array read now reads memory out of bounds instead. I reported this to the project (<a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>) &#8212; it was diagnosed and fixed the same day; see the update note at the top, the real cause is subtler than "a check was removed".</li>
 <li>There is also a trap I did not expect: <strong>the version number does not tell you which compiler you have.</strong> The part that makes the GPU code is downloaded fresh from the latest development branch, not from the version you asked for.</li>
 <li>The lesson: record the exact version of your tools when you measure &#8212; good practice for any benchmark, and especially here, where the version tag does not pin the backend. And re-check your old findings before you trust them.</li>
 </ul>
