@@ -54,6 +54,23 @@
             <li class="post-item">
                 <p class="post-date">July 2026</p>
                 <p class="post-title">
+                    <a href="/blog/softmax-cache-mirage/">
+                        How close to peak is a simple softmax? Two GPUs, one measurement trap
+                    </a>
+                </p>
+                <p class="post-desc">
+                    Softmax is memory-bound, so the question is simple: what fraction of bandwidth does it reach? I tested three optimizations on an L4 and an MI300X; the data rejected all three. The reason was more interesting than a speedup — most of my measurements were reading cache, not memory, and one GPU showed a mirage the other could not. On measuring your real ceiling, spotting cache-resident benchmarks, and knowing when an operation simply cannot fill the GPU. 3 figures.
+                </p>
+                <div class="post-tags">
+                    <span class="tag">softmax</span>
+                    <span class="tag">roofline</span>
+                    <span class="tag">Triton</span>
+                    <span class="tag">MI300X</span>
+                </div>
+            </li>
+            <li class="post-item">
+                <p class="post-date">July 2026</p>
+                <p class="post-title">
                     <a href="/blog/oxide-moving-target/">
                         Benchmarking a moving target: my cuda-oxide results changed in weeks
                     </a>

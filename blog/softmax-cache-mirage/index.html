@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How close to peak is a simple softmax? Two GPUs, one measurement trap — Midia Reshadi</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+      .post-content p { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+    </style>
+</head>
+<body>
+    <button id="floating-toggle" onclick="toggleSidebar()" style="
+        position:fixed; top:1rem; left:1rem; z-index:1000;
+        background:none; border:none; cursor:pointer;
+        padding:4px; color:#D97757; display:none;
+    " title="Show sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+    </button>
+        <aside class="sidebar">
+        <div style="margin-bottom:1.5rem;">
+            <button onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:0; color:#D97757; line-height:1; display:block; margin-bottom:10px;" title="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            </button>
+            <p style="font-size:17px; font-weight:700; color:#D97757; margin:0; white-space:nowrap; font-family:"Playfair Display", Georgia, serif;">&#9998; Midia Reshadi's Blog</p>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="../../index.html">&#8962; Home</a></li>
+        </ul>
+        <div class="sidebar-links">
+            <a href="https://github.com/midiareshadi" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+            </a>
+            <a href="https://www.linkedin.com/in/midia-reshadi/" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                LinkedIn
+            </a>
+            <a href="https://scholar.google.com/citations?user=gVWj19kAAAAJ&hl=en" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+                Google Scholar
+            </a>
+            <a href="https://rust-lang.zulipchat.com/#user/818806" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-6 4V5z"/></svg>
+                Zulip (rust-lang)
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <article>
+            <header class="post-header">
+                <h1>How close to peak is a simple softmax? Two GPUs, one measurement trap</h1>
+                <p class="post-meta">July 2026 &middot; ~10 min read &middot;
+                    <a href="https://github.com/midiareshadi/kernel-curiosity">code</a>
+                </p>
+            </header>
+
+            <div class="post-content">
+<p>Softmax is the textbook memory-bound kernel: read a row, write a row, almost no
+arithmetic in between. So its performance question is simple to state — what
+fraction of the machine's memory bandwidth does it actually reach?</p>
+<p>I set out to answer that on two very different GPUs, an NVIDIA L4 and an AMD
+MI300X, and to close whatever gap I found. I tested three optimizations. The
+data rejected all three. The reason turned out to be more interesting than any
+speedup: for most of the shapes I was measuring, I was not measuring memory at
+all.</p>
+<p>This post is that investigation, in order.</p>
+<h2>The operation, and the right metric</h2>
+<p>For each row, softmax finds the maximum, subtracts it (for numerical stability),
+exponentiates, and divides by the sum. One read of the row, one write, a handful
+of flops. Arithmetic intensity well below one flop per byte, which puts it
+firmly in the memory-bound regime.</p>
+<p>So milliseconds are the wrong unit. The honest metric is achieved bandwidth as a
+fraction of the hardware's real limit. A kernel at 95% of memory bandwidth is
+done; one at 30% has headroom — <em>if</em> the measurement is trustworthy. That last
+condition is where this went sideways.</p>
+<h2>The ceiling is not the spec sheet</h2>
+<p>To report a fraction of bandwidth I first needed the denominator. The datasheet
+gives the L4 300 GB/s, but a datasheet number assumes conditions real code never
+sees. So I measured it: a large contiguous copy — read an array, write another —
+is the simplest bandwidth-bound workload there is, and a fair estimate of the
+practical ceiling.</p>
+<p>The L4 reached 230 GB/s, about 77% of its 300 GB/s rating. The MI300X reached
+roughly 3,880 GB/s against a 5,300 GB/s spec, a near-identical 73%.</p>
+<div class="figure">
+    <img src="../../assets/figures/sm-spec-vs-measured.svg" alt="Spec-sheet bandwidth against what a plain copy actually reaches, on both GPUs.">
+    <p class="figure-caption">Spec-sheet bandwidth against what a plain copy actually reaches, on both GPUs.</p>
+</div>
+<p>Both cards deliver about three quarters of the sticker number. That gap is
+routine, but it is not optional to account for: normalising against 300 instead
+of 230 would have made every L4 result in this post about a quarter too low.
+Measure your own ceiling.</p>
+<h2>An anomaly worth chasing</h2>
+<p>With a measured ceiling in hand, I ran a simple Triton softmax — one program per
+row, safe max-subtract, nothing clever — against <code>torch.softmax</code> across a range
+of shapes. On large tensors they matched. On a small one, a 1024 by 1024 tensor
+of about 2 MB, they did not:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>simple Triton</th>
+<th>torch.softmax</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1024x1024 (2 MB)</td>
+<td>33.0% of peak</td>
+<td>80.9% of peak</td>
+</tr>
+</tbody>
+</table>
+<p>A 2.5x difference on the same operation. Two kernels computing identical results,
+one far behind — the obvious reading is that torch's kernel does something on
+small inputs that mine does not. That is a concrete, testable claim, so I formed
+hypotheses about what that something was and tested them one at a time.</p>
+<h2>Three hypotheses, three rejections</h2>
+<p><strong>Hypothesis 1: too little occupancy.</strong> One program per row means 1024 programs
+for this tensor. Perhaps too few resident warps to hide memory latency. I gave
+each program a tile of rows to raise occupancy. It did not help — and the reason
+is instructive: a tile of rows forces each program to hold a larger block in
+registers, which <em>lowers</em> how many can be resident at once. I swept the tile
+size across 1, 2, 4, 8, 16 rows; every setting stayed within a point or two of
+the baseline. The occupancy I added, I also took away.</p>
+<p><strong>Hypothesis 2: launch overhead.</strong> Starting 1024 programs for such small units
+of work might cost more than the work itself. I switched to a grid-stride design:
+a fixed, smaller number of programs, each looping over its share of rows. That
+did not help either, and it cost a little on large tensors, where the extra loop
+machinery is pure overhead.</p>
+<p><strong>Hypothesis 3: a poor warp count.</strong> Triton picks warps-per-block heuristically;
+maybe its choice was wrong for a thin row. I swept <code>num_warps</code> over 1 through 32.
+This is where I nearly fooled myself. One reading showed the small tensor moving
+from about 35% to 47% — a tempting result. But the full sweep had no trend at
+all: every count from 1 to 16 landed between 44% and 47%. If changing a knob
+across a 16x range does nothing monotonic, the knob is not the cause. The "35%" I
+had compared against came from a different run; small-tensor timings wander by
+ten points between sessions, and I had mistaken that wander for a gain.</p>
+<p>Three hypotheses about the kernel, three rejections. The gap held. So I stopped
+proposing kernel changes and interrogated the measurement instead.</p>
+<h2>Interrogating the measurement</h2>
+<p>Rather than ask how to make the small case faster, I asked whether the gap was a
+property of the kernel or of the tensor size. I swept the same comparison from
+2 MB up to 268 MB and watched the ratio:</p>
+<table>
+<thead>
+<tr>
+<th>size</th>
+<th>simple Triton</th>
+<th>torch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2 MB</td>
+<td>33.0%</td>
+<td>80.9%</td>
+</tr>
+<tr>
+<td>8 MB</td>
+<td>80.0%</td>
+<td>229.8%</td>
+</tr>
+<tr>
+<td>17 MB</td>
+<td>169.6%</td>
+<td>339.2%</td>
+</tr>
+<tr>
+<td>25 MB</td>
+<td>226.1%</td>
+<td>242.8%</td>
+</tr>
+<tr>
+<td>34 MB</td>
+<td>91.0%</td>
+<td>91.6%</td>
+</tr>
+<tr>
+<td>50 MB</td>
+<td>92.2%</td>
+<td>96.9%</td>
+</tr>
+<tr>
+<td>134 MB</td>
+<td>98.7%</td>
+<td>97.7%</td>
+</tr>
+<tr>
+<td>268 MB</td>
+<td>100.9%</td>
+<td>97.7%</td>
+</tr>
+</tbody>
+</table>
+<p>The gap is a function of size. It closes as the tensor grows, and by 134 MB the
+two kernels are within a percent. On the largest tensor the simple kernel is
+marginally ahead.</p>
+<p>The middle rows are impossible on their face: torch reaches 339% of peak at
+17 MB. A percentage is achieved bandwidth over the HBM ceiling of 230 GB/s, and
+nothing moves data faster than HBM allows — unless it never reaches HBM. That is
+what happens. The L4 has about 48 MB of L2 cache, far faster than its HBM. A
+17 MB tensor fits inside it, so the kernel reads and writes from cache; the raw
+figure is around 780 GB/s of <em>cache</em> bandwidth, which I then divide by the
+<em>memory</em> ceiling. Numerator and denominator describe two different memories, so
+the ratio sails past 100%. A reading above 100% is not a broken measurement — it
+is proof the data never touched HBM.</p>
+<p>The denser sweep shows the trap has a sharp shape, not a gentle one. The
+inflation climbs from 2 MB, peaks near 17 MB, holds high through 25 MB, then
+collapses between 25 and 34 MB — from 243% down to 92% — and stays honest from
+there on. Two things are worth noting about that cliff. First, it lands near
+30 MB, well below the 48 MB cache size: softmax reads each element about twice
+(once to find the max, once to normalise), so the tensor must be small enough to
+<em>stay</em> resident across both passes, not merely fit once. Second, the very
+smallest tensor is not the most inflated. At 2 MB the simple kernel reaches only
+33% — there are just 1024 rows, too few to keep the GPU busy, so
+underutilisation drags the number down even though the data is fully cached. The
+cache pushes the number up and starvation pushes it down; only past ~30 MB do
+both effects clear and the figure becomes a clean HBM measurement.</p>
+<div class="figure">
+    <img src="../../assets/figures/sm-cache-mirage.svg" alt="Percentage of measured peak bandwidth against tensor size. In the shaded region the data fits in cache, so the numbers describe the cache and can pass 100%. Once the data spills cache, the two kernels agree.">
+    <p class="figure-caption">Percentage of measured peak bandwidth against tensor size. In the shaded region the data fits in cache, so the numbers describe the cache and can pass 100%. Once the data spills cache, the two kernels agree.</p>
+</div>
+<p>Inside the shaded region the tensor fits in cache and the numbers describe the
+cache — which is why they can exceed 100%. Outside it, both kernels converge to
+95-99% of the real ceiling. There was never a kernel gap to close. torch's kernel
+is better at exploiting the cache on tiny inputs, a genuine but narrow
+difference; on any tensor large enough to be memory-bound, the simple kernel was
+already at the roofline.</p>
+<h2>A second GPU changes the answer</h2>
+<p>The L4 is a modest card. I repeated the study on an MI300X — 304 compute units,
+roughly 17x the bandwidth — expecting the same shape of result one tier up.
+Instead the kernel behaved differently:</p>
+<table>
+<thead>
+<tr>
+<th>size</th>
+<th>simple Triton</th>
+<th>torch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2 MB</td>
+<td>4.5%</td>
+<td>9.4%</td>
+</tr>
+<tr>
+<td>34 MB</td>
+<td>38.7%</td>
+<td>46.2%</td>
+</tr>
+<tr>
+<td>67 MB</td>
+<td>49.7%</td>
+<td>58.5%</td>
+</tr>
+<tr>
+<td>134 MB</td>
+<td>67.8%</td>
+<td>70.0%</td>
+</tr>
+<tr>
+<td>268 MB</td>
+<td>61.5%</td>
+<td>55.3%</td>
+</tr>
+<tr>
+<td>537 MB</td>
+<td>50.0%</td>
+<td>53.0%</td>
+</tr>
+<tr>
+<td>2.1 GB</td>
+<td>50.2%</td>
+<td>52.1%</td>
+</tr>
+</tbody>
+</table>
+<p>The kernel that reached 99% on the L4 never gets close here. It climbs to a hump
+of about 70% near 134 MB, then settles onto a plateau of about 50% that holds
+from 268 MB out to 2 GB. <code>torch.softmax</code> tracks it the whole way. And note what
+is missing: nothing on this GPU crosses 100%. The L4's cache mirage does not
+appear at all, even though I sampled densely across the MI300X's much larger
+cache.</p>
+<div class="figure">
+    <img src="../../assets/figures/sm-two-gpus.svg" alt="The same simple kernel on both GPUs. Past each dotted line the data no longer fits that GPU's cache. The L4 reaches its limit; the MI300X flattens at about half of its own.">
+    <p class="figure-caption">The same simple kernel on both GPUs. Past each dotted line the data no longer fits that GPU's cache. The L4 reaches its limit; the MI300X flattens at about half of its own.</p>
+</div>
+<p>Two conclusions follow. First, this is not a code deficiency: when the vendor
+library hits the identical wall, the wall is architectural, not in my kernel.
+Second, the cause is the shape of the work. Each row is 512 elements — a tiny
+unit — and to saturate 304 CUs and nearly 4,000 GB/s you need far more work in
+flight than thin rows supply. On a GPU this wide, a light memory-bound operation
+simply cannot reach the roofline, regardless of how the kernel is written.</p>
+<p>I expected the opposite. The MI300X's last-level cache is about 256 MB, five
+times the L4's, so I assumed the mirage would be <em>larger</em> here — dishonest
+numbers stretching to even bigger tensors. The dense sweep says no. The number
+never passes 100%; it just humps gently to 70% and falls back.</p>
+<p>The reason is the same starvation that caps the plateau, and it is the more
+interesting half of the two-GPU story. A mirage needs two things at once: data
+that sits in cache, <em>and</em> enough parallel work to turn that fast cache into
+throughput. The L4 has both in its mid-range, so cache speed dominates and the
+number soars past 100%. The MI300X is so wide — 304 CUs — that a thin-row softmax
+never supplies enough work to use it, at any size. Starvation dominates
+everywhere, so even when the data is fully cached the kernel cannot convert that
+into bandwidth, and the number stays capped well under the ceiling. The same
+width that holds the plateau at 50% is what prevents the cache mirage from ever
+forming. One GPU shows the trap dramatically; the other cannot show it at all,
+for a single shared reason.</p>
+<h2>Methodology</h2>
+<p>The investigation set out to make a kernel faster and instead produced a
+procedure for deciding whether it <em>can</em> be. Four points I would now treat as
+non-negotiable when benchmarking a memory-bound kernel:</p>
+<ul>
+<li><strong>Measure the bandwidth ceiling; do not use the datasheet.</strong> Both cards
+  delivered about 73-77% of their rated bandwidth on a plain copy.</li>
+<li><strong>Keep the working set larger than the last-level cache.</strong> Below it you are
+  measuring cache, not memory — and readings above 100% of HBM bandwidth are the
+  unmistakable sign that you are.</li>
+<li><strong>Compare against a tuned reference.</strong> When the simple kernel and
+  <code>torch.softmax</code> agreed to within a couple of percent, that agreement was the
+  evidence that no headroom remained.</li>
+<li><strong>Compare only within a single run.</strong> Small-tensor timings drifted ten points
+  between sessions; a gain measured against a previous run is not a gain.</li>
+</ul>
+<p>And a structural point: when a kernel and the vendor library plateau at the same
+fraction of peak, the limit is the operation meeting the machine, not the
+implementation. A thin-row softmax cannot fill an MI300X. Recognising that is
+worth more than another failed optimisation, because it redirects the effort —
+toward fusing the operation into something with more arithmetic per byte, or
+batching it, rather than tuning a kernel that is already doing all it can.</p>
+<h2>Two things I did not explain</h2>
+<p>The data left me with two open questions, and I would rather name them than
+paper over them.</p>
+<p>First, the shape of the L4 cache mirage. The inflation does not fade gently as
+the tensor approaches the 48 MB cache; it peaks near 17 MB, holds, then collapses
+between 25 and 34 MB — a cliff that sits <em>below</em> the cache size. My working guess
+is that softmax reads each row about twice, so the tensor must be small enough to
+stay resident across both passes rather than merely fit once. That is testable —
+change the number of passes and see if the cliff moves — and it is where I am
+taking this next.</p>
+<p>Second, a smaller curiosity. In the 200-400 MB band on the MI300X the simple
+kernel edges ahead of <code>torch.softmax</code>, reversing their usual order. It tracks
+row width rather than tensor size: the crossover appears on the 1024-wide rows,
+not the 512-wide ones. I noticed it; I have not chased down why.</p>
+<p>The kernels, benchmarks, and per-GPU CSVs are here:
+<a href="https://github.com/midiareshadi/kernel-curiosity">github.com/midiareshadi/kernel-curiosity</a></p>
+            </div>
+        </article>
+    </main>
+</body>
+</html>
