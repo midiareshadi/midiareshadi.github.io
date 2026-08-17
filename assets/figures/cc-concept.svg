@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="470" viewBox="0 0 680 470" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <text x="170" y="30" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b2b2b">read-write: input + output</text>
+  <rect x="90" y="44" width="160" height="120" rx="6" fill="none" stroke="#888" stroke-width="1" stroke-dasharray="4 3"/>
+  <rect x="98" y="52" width="144" height="52" rx="4" fill="#cfe0f2" stroke="#3b6ea5" stroke-width="0.5"/>
+  <text x="170" y="82" text-anchor="middle" font-size="12" fill="#24425f">output ~24 MB</text>
+  <rect x="98" y="108" width="144" height="48" rx="4" fill="#f3d9cc" stroke="#b5623a" stroke-width="0.5"/>
+  <text x="170" y="136" text-anchor="middle" font-size="12" fill="#7a3a1d">input ~24 MB</text>
+  <text x="170" y="182" text-anchor="middle" font-size="12" fill="#555">box full at ~27 MB input</text>
+  <text x="510" y="30" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b2b2b">read-only: input only</text>
+  <rect x="430" y="44" width="160" height="120" rx="6" fill="none" stroke="#888" stroke-width="1" stroke-dasharray="4 3"/>
+  <rect x="438" y="52" width="144" height="104" rx="4" fill="#f3d9cc" stroke="#b5623a" stroke-width="0.5"/>
+  <text x="510" y="108" text-anchor="middle" font-size="12" fill="#7a3a1d">input ~48 MB</text>
+  <text x="510" y="182" text-anchor="middle" font-size="12" fill="#555">box full at ~55 MB input</text>
+  <line x1="170" y1="196" x2="170" y2="228" stroke="#aaa" stroke-width="0.6" stroke-dasharray="3 3"/>
+  <line x1="510" y1="196" x2="510" y2="228" stroke="#aaa" stroke-width="0.6" stroke-dasharray="3 3"/>
+  <line x1="70" y1="410" x2="640" y2="410" stroke="#888" stroke-width="0.6"/>
+  <line x1="70" y1="250" x2="70" y2="410" stroke="#888" stroke-width="0.6"/>
+  <text x="60" y="262" text-anchor="end" font-size="12" fill="#555">fast</text>
+  <text x="60" y="408" text-anchor="end" font-size="12" fill="#555">slow</text>
+  <text x="355" y="432" text-anchor="middle" font-size="12" fill="#555">input size grows to the right</text>
+  <path d="M90 268 L170 268 L170 390 L360 390" fill="none" stroke="#c8622f" stroke-width="2"/>
+  <path d="M90 268 L510 268 L510 390 L620 390" fill="none" stroke="#2f9e78" stroke-width="2" stroke-dasharray="6 3"/>
+  <text x="235" y="300" text-anchor="middle" font-size="12" fill="#8a3d1c">read-write</text>
+  <text x="235" y="316" text-anchor="middle" font-size="12" fill="#8a3d1c">cliff at ~27 MB</text>
+  <text x="560" y="300" text-anchor="middle" font-size="12" fill="#1c6e54">read-only</text>
+  <text x="560" y="316" text-anchor="middle" font-size="12" fill="#1c6e54">cliff at ~55 MB</text>
+</svg>

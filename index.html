@@ -52,6 +52,23 @@
     <main class="main">
         <ul class="post-list">
             <li class="post-item">
+                <p class="post-date">August 2026</p>
+                <p class="post-title">
+                    <a href="/blog/cache-cliff/">
+                        A cliff below the cache: why a softmax slows down before it should
+                    </a>
+                </p>
+                <p class="post-desc">
+                    A follow-up to the softmax study. On the L4, the bandwidth cliff arrives at ~27 MB, below the 48 MB cache. Why? I guessed multi-pass reuse and was wrong: re-reading one small row costs almost no extra time (confirmed in the PTX). The real cause is that input and output share the cache, so a read-only kernel cliffs at ~55 MB, almost exactly double. 2 figures.
+                </p>
+                <div class="post-tags">
+                    <span class="tag">cache</span>
+                    <span class="tag">roofline</span>
+                    <span class="tag">Triton</span>
+                    <span class="tag">L4</span>
+                </div>
+            </li>
+            <li class="post-item">
                 <p class="post-date">July 2026</p>
                 <p class="post-title">
                     <a href="/blog/softmax-cache-mirage/">
