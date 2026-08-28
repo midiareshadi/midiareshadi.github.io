@@ -54,6 +54,23 @@
             <li class="post-item">
                 <p class="post-date">August 2026</p>
                 <p class="post-title">
+                    <a href="/blog/fp8-ada/">
+                        FP8 on Ada with cuda-oxide, checked on real silicon
+                    </a>
+                </p>
+                <p class="post-desc">
+                    cuda-oxide lets you write GPU kernels in Rust. Its FP8 support for Ada (sm_89) was largely auto-generated, so I checked it on a real L4: FP8 conversions and the full m16n8k16 tensor-core MMA family, verified numerically correct against CPU references, with clean PTX. Generated is not the same as verified, so this fills in that gap. 1 figure.
+                </p>
+                <div class="post-tags">
+                    <span class="tag">FP8</span>
+                    <span class="tag">Rust</span>
+                    <span class="tag">cuda-oxide</span>
+                    <span class="tag">Ada</span>
+                </div>
+            </li>
+            <li class="post-item">
+                <p class="post-date">August 2026</p>
+                <p class="post-title">
                     <a href="/blog/cache-cliff/">
                         A cliff below the cache: why a softmax slows down before it should
                     </a>
