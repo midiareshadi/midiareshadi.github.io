@@ -181,7 +181,6 @@ body {
 .post-content p {
     margin-bottom: 1rem;
     color: #333;
-    text-align: justify;
 }
 
 .post-content ul, .post-content ol {
@@ -302,4 +301,63 @@ tr:last-child td {
         margin-left: 0;
         padding: 1.5rem;
     }
+}
+
+/* --- session 1 --- */
+.sidebar-brand {
+    font-size: 17px;
+    font-weight: 700;
+    color: #D97757;
+    white-space: nowrap;
+    font-family: 'Playfair Display', Georgia, serif;
+    margin: 0;
+}
+
+.intro {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #ecdfd6;
+    border-left: 3px solid #D97757;
+    border-radius: 0 6px 6px 0;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.intro p {
+    font-family: 'Patrick Hand', 'Segoe Script', cursive;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.55;
+    color: #666;
+    margin: 0;
+}
+
+.intro p + p {
+    margin-top: 0.6rem;
+}
+
+/* homepage post descriptions: justified */
+.post-desc {
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
+
+.tag { cursor: pointer; user-select: none; }
+.tag:hover { color: #1a1a1a; }
+.tag-active { background: #D97757; color: #ffffff; }
+
+#filter-bar {
+    display: none;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.main.sidebar-hidden { margin-left: 2rem; }
+
+@media (max-width: 768px) {
+    .main.sidebar-hidden { margin-left: 0; }
 }
