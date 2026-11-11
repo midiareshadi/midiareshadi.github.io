@@ -325,12 +325,15 @@ tr:last-child td {
 }
 
 .intro p {
-    font-family: 'Patrick Hand', 'Segoe Script', cursive;
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 1.55;
-    color: #666;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.6;
+    color: #777;
     margin: 0;
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .intro p + p {
