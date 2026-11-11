@@ -121,6 +121,7 @@ body {
 
 .post-title a:hover {
     color: #0066cc;
+    text-decoration: underline;
 }
 
 .post-desc {
