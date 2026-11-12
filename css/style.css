@@ -375,11 +375,10 @@ tr:last-child td {
     position: absolute;
     top: 0;
     left: 100%;
-    margin-left: 1.5rem;
-    width: 230px;
+    margin-left: 1.75rem;
+    width: 300px;
     height: auto;
     display: block;
-    filter: brightness(1.016);
 }
 
 @media (max-width: 1260px) {
@@ -391,7 +390,7 @@ tr:last-child td {
     .gpu-mark {
         position: static;
         margin: 0;
-        width: 150px;
+        width: 170px;
         flex: none;
     }
 }
