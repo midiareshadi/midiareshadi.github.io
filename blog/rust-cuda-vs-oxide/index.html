@@ -4,46 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Language or backend? Adding rust-cuda to my GPU code comparison — Midia Reshadi</title>
-    <link rel="stylesheet" href="../../css/style.css?v=4">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <meta name="description" content="A 2×2 follow-up that adds rust-cuda (Rust → libNVVM) to the cuda-oxide study, so language and backend can be separated. The two Rust compilers turn out to make opposite safety choices; the compute-bound speed gap is real but not a pure backend effect. 3 figures.">
+    <link rel="canonical" href="https://midiareshadi.github.io/blog/rust-cuda-vs-oxide/">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://midiareshadi.github.io/blog/rust-cuda-vs-oxide/">
+    <meta property="og:title" content="Language or backend? Adding rust-cuda to my GPU code comparison — Midia Reshadi">
+    <meta property="og:description" content="A 2×2 follow-up that adds rust-cuda (Rust → libNVVM) to the cuda-oxide study, so language and backend can be separated. The two Rust compilers turn out to make opposite safety choices; the compute-bound speed gap is real but not a pure backend effect. 3 figures.">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="application/rss+xml" title="Midia Reshadi" href="https://midiareshadi.github.io/feed.xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="../../css/style.css?v=8">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <button id="floating-toggle" onclick="toggleSidebar()" style="
-        position:fixed; top:1rem; left:1rem; z-index:1000;
-        background:none; border:none; cursor:pointer;
-        padding:4px; color:#D97757; display:none;
-    " title="Show sidebar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <line x1="9" y1="3" x2="9" y2="21"/>
-        </svg>
+    <button id="floating-toggle" onclick="toggleSidebar()" title="Show sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
     </button>
-        <aside class="sidebar">
-        <div style="margin-bottom:1.5rem;">
-            <button onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; padding:0; color:#D97757; line-height:1; display:block; margin-bottom:10px;" title="Toggle sidebar">
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
             </button>
-            <p style="font-size:17px; font-weight:700; color:#D97757; margin:0; white-space:nowrap; font-family:"Playfair Display", Georgia, serif;">&#9998; Midia Reshadi's Blog</p>
+            <p class="sidebar-brand">&#9998; Midia Reshadi's Blog</p>
         </div>
         <ul class="sidebar-nav">
             <li><a href="../../index.html">&#8962; Home</a></li>
         </ul>
         <div class="sidebar-links">
-            <a href="https://github.com/midiareshadi" target="_blank">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            <a href="https://github.com/midiareshadi" target="_blank" rel="noopener">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="sidebar-icon"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
                 GitHub
             </a>
-            <a href="https://www.linkedin.com/in/midia-reshadi/" target="_blank">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            <a href="https://www.linkedin.com/in/midia-reshadi/" target="_blank" rel="noopener">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="sidebar-icon"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
                 LinkedIn
             </a>
-            <a href="https://scholar.google.com/citations?user=gVWj19kAAAAJ&hl=en" target="_blank">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+            <a href="https://scholar.google.com/citations?user=gVWj19kAAAAJ&hl=en" target="_blank" rel="noopener">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="sidebar-icon"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
                 Google Scholar
             </a>
-            <a href="https://rust-lang.zulipchat.com/#user/818806" target="_blank">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:5px;"><path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-6 4V5z"/></svg>
+            <a href="https://rust-lang.zulipchat.com/#user/818806" target="_blank" rel="noopener">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="sidebar-icon"><path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-6 4V5z"/></svg>
                 Zulip (rust-lang)
             </a>
         </div>
@@ -58,6 +60,18 @@
                 </p>
             </header>
 
+            <!-- series-nav -->
+            <nav class="series-nav" aria-label="Series navigation">
+                <p class="series-title">Rust on the GPU with cuda-oxide <span class="series-count">part 2 of 5</span></p>
+                <ul>
+                    <li><span class="series-part">Part 1</span><a href="../../blog/cuda-oxide-ptx/">Safe Rust on the GPU, at the PTX level: what cuda-oxide actually emits</a></li>
+                    <li class="is-current"><span class="series-part">Part 2</span><span>Language or backend? Adding rust-cuda to my GPU code comparison</span></li>
+                    <li><span class="series-part">Part 3</span><a href="../../blog/reduction-gap/">Found it: the Rust GPU speed gap was a 64-bit loop counter</a></li>
+                    <li><span class="series-part">Part 4</span><a href="../../blog/oxide-moving-target/">Benchmarking a moving target: my cuda-oxide results changed in weeks</a></li>
+                    <li><span class="series-part">Part 5</span><a href="../../blog/fp8-ada/">FP8 on Ada with cuda-oxide, checked on real silicon</a></li>
+                </ul>
+            </nav>
+            <!-- /series-nav -->
             <div class="post-content">
 
 <h2>The short version</h2>

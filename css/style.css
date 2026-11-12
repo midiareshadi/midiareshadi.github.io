@@ -398,3 +398,98 @@ tr:last-child td {
 @media (max-width: 600px) {
     .gpu-mark { display: none; }
 }
+
+/* --- generated blocks: sidebar, series nav --- */
+.sidebar-head {
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-toggle,
+#floating-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: #D97757;
+    line-height: 1;
+    display: block;
+    margin-bottom: 10px;
+}
+
+#floating-toggle {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    padding: 4px;
+    display: none;
+}
+
+.sidebar-icon {
+    vertical-align: -2px;
+    margin-right: 5px;
+}
+
+.post-content p {
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
+
+.series-nav {
+    background: #ffffff;
+    border: 1px solid #ecdfd6;
+    border-left: 3px solid #D97757;
+    border-radius: 0 4px 4px 0;
+    padding: 0.9rem 1.2rem;
+    margin: 0 0 2rem;
+}
+
+.series-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.series-count {
+    font-weight: 400;
+    color: #aaa;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.series-nav ul {
+    list-style: none;
+    margin: 0;
+}
+
+.series-nav li {
+    font-size: 13px;
+    color: #666;
+    padding: 2px 0;
+    display: flex;
+    gap: 0.6rem;
+}
+
+.series-nav li.is-current {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.series-part {
+    color: #aaa;
+    flex: none;
+    min-width: 3.4rem;
+}
+
+.series-nav a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.series-nav a:hover {
+    text-decoration: underline;
+}

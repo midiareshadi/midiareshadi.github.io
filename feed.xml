@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Midia Reshadi — GPU kernel performance, measured</title>
+    <link>https://midiareshadi.github.io/</link>
+    <description>Independent GPU kernel research. Benchmarks and low-level analysis on NVIDIA and AMD hardware, including the experiments that reject my own hypotheses.</description>
+    <language>en</language>
+    <lastBuildDate>Thu, 12 Nov 2026 18:18:08 +0000</lastBuildDate>
+    <atom:link href="https://midiareshadi.github.io/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>FP8 on Ada with cuda-oxide, checked on real silicon</title>
+      <link>https://midiareshadi.github.io/blog/fp8-ada/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/fp8-ada/</guid>
+      <pubDate>Sat, 01 Aug 2026 00:00:00 +0000</pubDate>
+      <description>cuda-oxide lets you write GPU kernels in Rust. Its FP8 support for Ada (sm_89) was largely auto-generated, so I checked it on a real L4: FP8 conversions and the full m16n8k16 tensor-core MMA family, verified numerically correct against CPU references, with clean PTX. Generated is not the same as verified, so this fills in that gap. 1 figure.</description>
+      <category>FP8</category>
+      <category>Rust</category>
+      <category>cuda-oxide</category>
+      <category>Ada</category>
+    </item>
+    <item>
+      <title>A cliff below the cache: why a softmax slows down before it should</title>
+      <link>https://midiareshadi.github.io/blog/cache-cliff/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/cache-cliff/</guid>
+      <pubDate>Sat, 01 Aug 2026 00:00:00 +0000</pubDate>
+      <description>A follow-up to the softmax study. On the L4, the bandwidth cliff arrives at ~27 MB, below the 48 MB cache. Why? I guessed multi-pass reuse and was wrong: re-reading one small row costs almost no extra time (confirmed in the PTX). The real cause is that input and output share the cache, so a read-only kernel cliffs at ~55 MB, almost exactly double. 2 figures.</description>
+      <category>cache</category>
+      <category>roofline</category>
+      <category>Triton</category>
+      <category>L4</category>
+    </item>
+    <item>
+      <title>How close to peak is a simple softmax? Two GPUs, one measurement trap</title>
+      <link>https://midiareshadi.github.io/blog/softmax-cache-mirage/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/softmax-cache-mirage/</guid>
+      <pubDate>Wed, 01 Jul 2026 00:00:00 +0000</pubDate>
+      <description>Softmax is memory-bound, so the question is simple: what fraction of bandwidth does it reach? I tested three optimizations on an L4 and an MI300X; the data rejected all three. The reason was more interesting than a speedup — most of my measurements were reading cache, not memory, and one GPU showed a mirage the other could not. On measuring your real ceiling, spotting cache-resident benchmarks, and knowing when an operation simply cannot fill the GPU. 3 figures.</description>
+      <category>softmax</category>
+      <category>roofline</category>
+      <category>Triton</category>
+      <category>MI300X</category>
+    </item>
+    <item>
+      <title>Benchmarking a moving target: my cuda-oxide results changed in weeks</title>
+      <link>https://midiareshadi.github.io/blog/oxide-moving-target/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/oxide-moving-target/</guid>
+      <pubDate>Wed, 01 Jul 2026 00:00:00 +0000</pubDate>
+      <description>A follow-up to my cuda-oxide study. Re-testing weeks later, two of three findings had changed — and one change dropped a safe-indexing bounds check, so safe Rust code reads out of bounds (confirmed by compute-sanitizer, reported as cuda-oxide #396). Also: why the version tag does not pin the compiler. 3 figures.</description>
+      <category>cuda-oxide</category>
+      <category>safety</category>
+      <category>PTX</category>
+      <category>reproducibility</category>
+    </item>
+    <item>
+      <title>Found it: the Rust GPU speed gap was a 64-bit loop counter</title>
+      <link>https://midiareshadi.github.io/blog/reduction-gap/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/reduction-gap/</guid>
+      <pubDate>Wed, 01 Jul 2026 00:00:00 +0000</pubDate>
+      <description>Follow-up to the 2×2 study, which left a ~3–5% Rust deficit on the reduction kernel as &quot;cause not established&quot;. Reading the SASS pointed at 64-bit (usize) loop indexing; a three-line u32 change removes the gap completely. 3 figures.</description>
+      <category>SASS</category>
+      <category>rust-cuda</category>
+      <category>cuda-oxide</category>
+      <category>performance</category>
+    </item>
+    <item>
+      <title>Language or backend? Adding rust-cuda to my GPU code comparison</title>
+      <link>https://midiareshadi.github.io/blog/rust-cuda-vs-oxide/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/rust-cuda-vs-oxide/</guid>
+      <pubDate>Wed, 01 Jul 2026 00:00:00 +0000</pubDate>
+      <description>A 2×2 follow-up that adds rust-cuda (Rust → libNVVM) to the cuda-oxide study, so language and backend can be separated. The two Rust compilers turn out to make opposite safety choices; the compute-bound speed gap is real but not a pure backend effect. 3 figures.</description>
+      <category>rust-cuda</category>
+      <category>cuda-oxide</category>
+      <category>Rust</category>
+      <category>PTX</category>
+    </item>
+    <item>
+      <title>Safe Rust on the GPU, at the PTX level: what cuda-oxide actually emits</title>
+      <link>https://midiareshadi.github.io/blog/cuda-oxide-ptx/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/cuda-oxide-ptx/</guid>
+      <pubDate>Mon, 01 Jun 2026 00:00:00 +0000</pubDate>
+      <description>A PTX/SASS-level comparison of cuda-oxide (safe Rust to PTX) against clang and nvcc on three GPU kernels — where the overhead comes from, whether it amortizes, and what it costs at runtime on an L4. 3 figures.</description>
+      <category>cuda-oxide</category>
+      <category>Rust</category>
+      <category>PTX</category>
+      <category>GPU</category>
+    </item>
+    <item>
+      <title>Attention kernels on MI300X: a utilization story</title>
+      <link>https://midiareshadi.github.io/blog/attn-dsl-bench/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/attn-dsl-bench/</guid>
+      <pubDate>Mon, 01 Jun 2026 00:00:00 +0000</pubDate>
+      <description>Benchmarking FlashAttention kernels on AMD MI300X — AITER vs Triton vs PyTorch SDPA, with hardware counters explaining the throughput ranking. 60 data points, 3 figures.</description>
+      <category>MI300X</category>
+      <category>FlashAttention</category>
+      <category>AITER</category>
+      <category>Triton</category>
+    </item>
+    <item>
+      <title>Why Outer-Product Beats Vendor Sparse Libraries by up to 198x for LLM Attention Sparsity</title>
+      <link>https://midiareshadi.github.io/blog/spmm-benchmark/</link>
+      <guid isPermaLink="true">https://midiareshadi.github.io/blog/spmm-benchmark/</guid>
+      <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+      <description>Benchmarking dense dataflow strategies and sparse SpMSpM algorithms on NVIDIA T4 and AMD MI300x — 222 data points, 7 figures.</description>
+      <category>Triton</category>
+      <category>SpMSpM</category>
+      <category>MI300x</category>
+      <category>LLM</category>
+    </item>
+  </channel>
+</rss>
