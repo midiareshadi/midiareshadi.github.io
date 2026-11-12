@@ -365,3 +365,37 @@ tr:last-child td {
 @media (max-width: 768px) {
     .main.sidebar-hidden { margin-left: 0; }
 }
+
+/* --- homepage GPU mark --- */
+.intro-row {
+    position: relative;
+}
+
+.gpu-mark {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    margin-left: 1.5rem;
+    width: 230px;
+    height: auto;
+    display: block;
+    filter: brightness(1.016);
+}
+
+@media (max-width: 1260px) {
+    .intro-row {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+    }
+    .gpu-mark {
+        position: static;
+        margin: 0;
+        width: 150px;
+        flex: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .gpu-mark { display: none; }
+}
