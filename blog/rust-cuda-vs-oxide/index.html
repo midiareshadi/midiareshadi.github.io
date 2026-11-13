@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="../../css/style.css?v=9">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <script defer src="../../js/site.js?v=9"></script>
 </head>
 <body>
     <button id="floating-toggle" onclick="toggleSidebar()" title="Show sidebar">
@@ -50,16 +51,12 @@
             </a>
         </div>
     </aside>
-
     <main class="main">
         <article>
             <header class="post-header">
                 <h1>Language or backend? Adding rust-cuda to my GPU code comparison</h1>
-                <p class="post-meta">July 2026 &middot; ~12 min read &middot;
-                    <a href="https://github.com/midiareshadi/rust-cuda-vs-oxide">code</a>
-                </p>
+                <p class="post-meta">July 2026 &middot; ~12 min read &middot; <a href="https://github.com/midiareshadi/rust-cuda-vs-oxide" target="_blank" rel="noopener">code</a></p>
             </header>
-
             <!-- series-nav -->
             <nav class="series-nav" aria-label="Series navigation">
                 <p class="series-title">Rust on the GPU with cuda-oxide <span class="series-count">part 2 of 5</span></p>
@@ -73,32 +70,26 @@
             </nav>
             <!-- /series-nav -->
             <div class="post-content">
-
 <h2>The short version</h2>
 <ul>
 <li>In an <a href="../cuda-oxide-ptx/index.html">earlier post</a> I compared three compilers for the same GPU kernels: cuda-oxide (safe Rust to PTX), clang (CUDA C++, upstream LLVM), and nvcc (CUDA C++, NVIDIA's libNVVM).</li>
 <li>That post had one weakness: it had only one Rust compiler. So when Rust looked different, I could not tell if the cause was "Rust" or "a different backend".</li>
-<li>This post fixes that. I add a fourth compiler, <strong>rust-cuda</strong>, which is Rust but uses NVIDIA's libNVVM backend. Now I have a 2&#215;2: language (Rust or C++) times backend (upstream LLVM or libNVVM).</li>
+<li>This post fixes that. I add a fourth compiler, <strong>rust-cuda</strong>, which is Rust but uses NVIDIA's libNVVM backend. Now I have a 2×2: language (Rust or C++) times backend (upstream LLVM or libNVVM).</li>
 <li><strong>Addressing:</strong> only cuda-oxide uses "generic" memory loads. The other three (including the other Rust compiler) use "global" loads. So this is a cuda-oxide detail, not a "Rust" or "upstream LLVM" effect.</li>
 <li><strong>Safety:</strong> the two Rust compilers make <em>opposite</em> choices. rust-cuda keeps the array bounds check and adds a GPU <code>trap</code>. cuda-oxide removes the bounds check on reads. This is the clearest new point in this post.</li>
 <li><strong>Speed:</strong> on memory-heavy kernels, all four run at the same speed. On the compute-heavy kernel, the two C++ compilers are about 3 to 5 percent faster than the two Rust compilers. The order is stable, but I did <strong>not</strong> prove the cause.</li>
 </ul>
-
 <h2>Where this comes from</h2>
 <p>My previous study asked a simple question: does writing a GPU kernel in safe Rust cost anything in the machine code, compared to C++? It compared three compilers on three small kernels. The result was: mostly no cost, with a small gap on one compute-heavy kernel.</p>
 <p>But three compilers is not enough to answer "why". cuda-oxide is Rust <strong>and</strong> it uses the upstream LLVM backend. So if it behaves differently, two things could explain it: the language (Rust), or the backend (upstream LLVM). With only one Rust compiler, I could not separate these two causes.</p>
-
-<h2>The 2&#215;2 idea</h2>
+<h2>The 2×2 idea</h2>
 <p>To separate them, I need a Rust compiler that uses the <strong>other</strong> backend. That compiler is <strong>rust-cuda</strong> (the Rust-GPU project's <code>rustc_codegen_nvvm</code>). It compiles Rust, but it lowers the code through NVIDIA's libNVVM, the same backend family that nvcc uses.</p>
-<p>Now the four compilers form a clean 2&#215;2 grid. This grid is the whole point of this post. If I see an effect, I can now ask: does it follow the <strong>row</strong> (the language) or the <strong>column</strong> (the backend)?</p>
-
+<p>Now the four compilers form a clean 2×2 grid. This grid is the whole point of this post. If I see an effect, I can now ask: does it follow the <strong>row</strong> (the language) or the <strong>column</strong> (the backend)?</p>
 <div class="figure">
     <img src="../../assets/figures/rco-2x2.svg" alt="The 2x2 grid: Rust and C++ rows, upstream LLVM and libNVVM columns, with the four compilers cuda-oxide, rust-cuda, clang, nvcc">
-    <p class="figure-caption">The four compilers as a 2&#215;2. Each column shares a backend; each row shares a language. cuda-oxide is highlighted because it is the only cell that uses generic addressing &#8212; a behavior not shared by the other Rust compiler or the other upstream-LLVM compiler.</p>
+    <p class="figure-caption">The four compilers as a 2×2. Each column shares a backend; each row shares a language. cuda-oxide is highlighted because it is the only cell that uses generic addressing — a behavior not shared by the other Rust compiler or the other upstream-LLVM compiler.</p>
 </div>
-
 <p>Quick note for context: the rust-cuda team itself says libNVVM has private optimizations that the upstream LLVM PTX backend does not, and that this can matter on bigger kernels. So a backend effect is plausible in advance. My job is to check what the data actually shows.</p>
-
 <h2>The four versions of each kernel</h2>
 <p>I use the same three kernels as before:</p>
 <ul>
@@ -107,74 +98,62 @@
 <li><strong>reduction</strong>: sum many numbers using shared memory and a barrier. This kernel does real work per thread.</li>
 </ul>
 <p>One honest point up front: the four versions are the <strong>same algorithm</strong>, but each is written in its own natural style, not as byte-identical code. For example, cuda-oxide writes its output through a safe type called <code>DisjointSlice</code>. rust-cuda has no equal to this, so it writes through a raw pointer, like C++. Because of this, the number of kernel arguments is not the same in every version (a Rust slice carries a length; a raw pointer does not). So raw "instruction counts" mix two things: the compiler, and what the source code asked for. I keep this in mind and lean on the clear, yes/no signals (which kind of load; is there a trap) more than on exact counts.</p>
-
 <h2>What I measured</h2>
 <p>Two halves, the same as the previous study.</p>
 <p><strong>Static (the emitted code).</strong> For each kernel and each compiler I produce PTX (the assembly-like code CUDA uses). I run the <strong>same</strong> <code>ptxas</code> assembler on all four, at the same settings (sm_89, -O3). Then I read register use and disassemble to SASS (the real machine code). Using one shared assembler means the only thing that changes is the compiler's PTX, not the assembler.</p>
 <p><strong>Runtime (the speed).</strong> I take each compiler's PTX, build it into a cubin with that same <code>ptxas</code>, load it through the CUDA driver, and time it with CUDA events. Every version runs through the <strong>same</strong> launch code with the <strong>same</strong> data. So the only difference is the compiled kernel. I tested on an NVIDIA L4 GPU.</p>
-
 <h2>Finding 1: addressing is a cuda-oxide detail, not a Rust or LLVM detail</h2>
 <p>In the emitted code, cuda-oxide is the only one that uses <strong>generic</strong> loads and stores (<code>ld</code>/<code>st</code> without a fixed memory space). The other three use <strong>global</strong> loads and stores (<code>ld.global</code>/<code>st.global</code>), which name the memory space directly.</p>
-<p>This is exactly where the 2&#215;2 helps. cuda-oxide is Rust <strong>and</strong> upstream LLVM. But:</p>
+<p>This is exactly where the 2×2 helps. cuda-oxide is Rust <strong>and</strong> upstream LLVM. But:</p>
 <ul>
 <li>rust-cuda is also Rust, and it uses global loads.</li>
 <li>clang is also upstream LLVM, and it uses global loads.</li>
 </ul>
 <p>So "generic addressing" does not follow the Rust row or the upstream-LLVM column. It is specific to cuda-oxide's own lowering. My previous post saw the generic loads but could not rule out "Rust" or "upstream LLVM" as the cause. Now I can: it is neither.</p>
-
 <p><em><strong>Update (July 2026):</strong> this finding has since changed. On a newer cuda-oxide backend, the generic loads became global loads (matching the other three compilers), so this addressing difference no longer holds. Re-testing also revealed a dropped bounds check that lets safe Rust code read out of bounds. See the follow-up: <a href="../oxide-moving-target/index.html">Benchmarking a moving target</a>.</em></p>
-
 <h2>Finding 2: the two Rust compilers make opposite safety choices</h2>
 <p>This is the clearest new result in this post.</p>
 <p>In Rust, reading <code>a[i]</code> includes a bounds check. If <code>i</code> is out of range, normal Rust panics. On a GPU there is no panic, so the check becomes a <code>trap</code> instruction (it stops the thread).</p>
 <p>The two Rust compilers handle this very differently. I read the actual gather PTX to be sure, instead of guessing.</p>
 <ul>
-<li><strong>rust-cuda keeps the check.</strong> Its gather PTX has two traps, and both are real bounds checks. The first compares the thread index <code>i</code> against the length of the <code>indices</code> array; if <code>i</code> is too big, it jumps to a <code>trap</code>. Only then does it load <code>indices[i]</code>. The second check is the interesting one: it takes that loaded value and compares it against the length of the <code>src</code> array, before reading <code>src[indices[i]]</code>. If the loaded index is out of range, it traps. This is a true runtime bounds check on a data-dependent index &#8212; exactly the case the compiler cannot prove safe in advance, so it must check at runtime.</li>
+<li><strong>rust-cuda keeps the check.</strong> Its gather PTX has two traps, and both are real bounds checks. The first compares the thread index <code>i</code> against the length of the <code>indices</code> array; if <code>i</code> is too big, it jumps to a <code>trap</code>. Only then does it load <code>indices[i]</code>. The second check is the interesting one: it takes that loaded value and compares it against the length of the <code>src</code> array, before reading <code>src[indices[i]]</code>. If the loaded index is out of range, it traps. This is a true runtime bounds check on a data-dependent index — exactly the case the compiler cannot prove safe in advance, so it must check at runtime.</li>
 <li><strong>cuda-oxide does not check the reads.</strong> Its gather PTX has no trap. It loads <code>src[indices[i]]</code> directly, with no bounds check. An out-of-range read does not stop the thread. (This matches what I found in the previous study, and it matches cuda-oxide's own docs: writes through its safe type are checked, but reads are not.)</li>
 </ul>
 <p>So here are two compilers, both "safe Rust to GPU", that make opposite choices on the exact case where it matters most: an index the compiler cannot prove. rust-cuda checks the index at runtime and traps if it is out of range; cuda-oxide does not check it. If you care about catching out-of-range GPU reads, this difference is important, and it is easy to miss.</p>
-
 <div class="figure">
     <img src="../../assets/figures/rco-gather-static.svg" alt="Bar chart of PTX instruction counts for gather: oxide 64, rustcuda 36, clang 25, nvcc 26">
-    <p class="figure-caption">gather is the kernel with the largest difference in the emitted code: cuda-oxide emits about 2.5&#215; the instructions of the C++ compilers, and rust-cuda adds two bounds-check traps for the data-dependent read. Yet at runtime all four were equal within measurement noise (about 5694 &#181;s), because this kernel waits on memory.</p>
+    <p class="figure-caption">gather is the kernel with the largest difference in the emitted code: cuda-oxide emits about 2.5× the instructions of the C++ compilers, and rust-cuda adds two bounds-check traps for the data-dependent read. Yet at runtime all four were equal within measurement noise (about 5694 µs), because this kernel waits on memory.</p>
 </div>
-
-<h2>Finding 3: speed &#8212; careful with this one</h2>
+<h2>Finding 3: speed — careful with this one</h2>
 <p>Here I am extra careful, because speed claims are easy to get wrong.</p>
 <p><strong>Memory-bound kernels (vecadd and gather): all four are the same.</strong> On vecadd, all four are within a fraction of a percent (about 807 microseconds, about 249 GB/s). On gather, all four are the same within measurement noise (about 5694 microseconds). Note this well: gather is the kernel with the <strong>biggest</strong> difference in the emitted code, yet the <strong>smallest</strong> difference in speed. The reason is simple: these kernels wait on memory. The GPU spends its time fetching data, so a few extra instructions do not change the wall-clock time. The kept safety check in rust-cuda costs nothing here.</p>
 <p>I do <strong>not</strong> report these as exact tiny percentages. The differences are smaller than the timing noise, so the honest statement is "the same within noise".</p>
 <p><strong>Compute-bound kernel (reduction): a small, real gap, cause unknown.</strong> reduction does real work per thread, so the code quality can reach the clock. To measure it well, I locked the GPU clock at 2040 MHz and used many more repeats. The two C++ compilers are about 3 to 5 percent faster than the two Rust compilers. This order was stable across repeated runs, and even the fastest single runs (the minimums) do not overlap between the C++ group and the Rust group. So the gap looks real, not just noise.</p>
-
 <div class="figure">
     <img src="../../assets/figures/rco-reduction.svg" alt="Bar chart of reduction median microseconds per launch: nvcc 337, clang 344, oxide 351, rustcuda 354">
-    <p class="figure-caption">reduction median time per launch (locked clock, 50 rounds &#215; 200 reps). The two C++ compilers are a little faster than the two Rust compilers. Note: the axis starts at 320 &#181;s to make the small gap visible. The cause is not established, and it is not a pure backend effect &#8212; if it were, the two libNVVM tools (nvcc and rust-cuda) would group together, and they do not.</p>
+    <p class="figure-caption">reduction median time per launch (locked clock, 50 rounds × 200 reps). The two C++ compilers are a little faster than the two Rust compilers. Note: the axis starts at 320 µs to make the small gap visible. The cause is not established, and it is not a pure backend effect — if it were, the two libNVVM tools (nvcc and rust-cuda) would group together, and they do not.</p>
 </div>
-
 <p>But I want to be honest about two things:</p>
 <ul>
 <li><strong>It is not a pure backend effect.</strong> If the backend alone explained it, the two libNVVM compilers (nvcc and rust-cuda) should group together. They do not: nvcc is the fastest and rust-cuda is the slowest, even though both use libNVVM. So "libNVVM is just faster" does not explain this result.</li>
 <li><strong>I did not prove the cause.</strong> The gap lines up with language (both C++ ahead of both Rust). But I cannot yet say <em>why</em>. It could be the kernel code, or a smaller detail like the extra length arguments that Rust slices pass to the kernel. More work is needed to find the real cause. I am not claiming one.</li>
 </ul>
-
 <p><em><strong>Update (July 2026):</strong> the cause is now found — it was a 64-bit loop counter. See the follow-up post: <a href="../reduction-gap/index.html">Found it: the Rust GPU speed gap was a 64-bit loop counter</a>.</em></p>
-
-
 <h2>What is new here, and what was already known</h2>
 <p>I want to be clear and fair about this.</p>
 <p>Already known:</p>
 <ul>
-<li>"Safe Rust on the GPU can be as fast as C++ when the kernel is memory-bound" &#8212; I showed this in my previous post.</li>
-<li>"cuda-oxide is a few percent slower on the compute-bound kernel" &#8212; also in my previous post.</li>
-<li>"libNVVM has optimizations the upstream LLVM PTX backend lacks" &#8212; this is stated by the rust-cuda project itself.</li>
+<li>"Safe Rust on the GPU can be as fast as C++ when the kernel is memory-bound" — I showed this in my previous post.</li>
+<li>"cuda-oxide is a few percent slower on the compute-bound kernel" — also in my previous post.</li>
+<li>"libNVVM has optimizations the upstream LLVM PTX backend lacks" — this is stated by the rust-cuda project itself.</li>
 </ul>
 <p>New in this post:</p>
 <ul>
-<li>The <strong>2&#215;2</strong> with rust-cuda added, which lets me separate language from backend. The previous post could not do this.</li>
+<li>The <strong>2×2</strong> with rust-cuda added, which lets me separate language from backend. The previous post could not do this.</li>
 <li>The result that the simple stories do <strong>not</strong> fully hold: the reduction gap is not a pure backend effect, and the addressing difference is not a Rust or upstream-LLVM effect.</li>
 <li>The <strong>safety contrast</strong> between the two Rust compilers (rust-cuda keeps the trap; cuda-oxide removes the read check). This is the most concrete new point.</li>
 </ul>
 <p>So this is a careful follow-up, not a big discovery. Its value is that it tests the obvious explanations and shows where they break.</p>
-
 <h2>Honest limits</h2>
 <ul>
 <li>Only three small kernels. Real kernels are bigger and may behave differently.</li>
@@ -183,10 +162,8 @@
 <li>The cause of the reduction gap is not established.</li>
 <li>Both cuda-oxide and rust-cuda are early-stage (alpha) projects. Their output will change over time, so these exact numbers are a snapshot.</li>
 </ul>
-
 <h2>Reproduce it</h2>
-<p>All code, the emitted PTX/SASS, the CSV results, and a full methodology are in the repo: <a href="https://github.com/midiareshadi/rust-cuda-vs-oxide">github.com/midiareshadi/rust-cuda-vs-oxide</a>. The repo lists every step, so you can rebuild the whole 2&#215;2 yourself.</p>
-
+<p>All code, the emitted PTX/SASS, the CSV results, and a full methodology are in the repo: <a href="https://github.com/midiareshadi/rust-cuda-vs-oxide">github.com/midiareshadi/rust-cuda-vs-oxide</a>. The repo lists every step, so you can rebuild the whole 2×2 yourself.</p>
             </div>
         </article>
     </main>

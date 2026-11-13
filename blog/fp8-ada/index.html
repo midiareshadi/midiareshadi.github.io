@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="../../css/style.css?v=9">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <script defer src="../../js/site.js?v=9"></script>
 </head>
 <body>
     <button id="floating-toggle" onclick="toggleSidebar()" title="Show sidebar">
@@ -50,16 +51,12 @@
             </a>
         </div>
     </aside>
-
     <main class="main">
         <article>
             <header class="post-header">
                 <h1>FP8 on Ada with cuda-oxide, checked on real silicon</h1>
-                <p class="post-meta">August 2026 &middot; ~9 min read &middot;
-                    <a href="https://github.com/NVlabs/cuda-oxide">cuda-oxide</a>
-                </p>
+                <p class="post-meta">August 2026 &middot; ~9 min read &middot; <a href="https://github.com/NVlabs/cuda-oxide" target="_blank" rel="noopener">cuda-oxide</a></p>
             </header>
-
             <!-- series-nav -->
             <nav class="series-nav" aria-label="Series navigation">
                 <p class="series-title">Rust on the GPU with cuda-oxide <span class="series-count">part 5 of 5</span></p>
@@ -76,7 +73,7 @@
 <h2>Why FP8 on Ada is worth checking</h2>
 <p>FP8 is a very small number format. Each value is just 8 bits. That is tiny compared to the usual 16-bit or 32-bit floats. For big AI models this smallness is a gift: less memory used, and faster math. So FP8 has become important for running large models cheaply.</p>
 <p>Modern NVIDIA GPUs support FP8 in hardware. The experiments here were run on an NVIDIA L4, which uses the Ada Lovelace architecture. Ada added FP8 support in its tensor cores. On paper, the L4 can do FP8.</p>
-<p>But FP8 on Ada has a rough history. When it was new, many tools did not support it well. Triton had a bug where FP8 conversion failed on Ada because the generated code was too old (<a href="https://github.com/triton-lang/triton/issues/3899" target="_blank">triton#3899</a>). Some of the low-level hardware behavior is not even clearly documented. So "Ada supports FP8" and "FP8 actually works well on Ada in my tool" are two different claims. The first is on the spec sheet. The second you have to check.</p>
+<p>But FP8 on Ada has a rough history. When it was new, many tools did not support it well. Triton had a bug where FP8 conversion failed on Ada because the generated code was too old (<a href="https://github.com/triton-lang/triton/issues/3899">triton#3899</a>). Some of the low-level hardware behavior is not even clearly documented. So "Ada supports FP8" and "FP8 actually works well on Ada in my tool" are two different claims. The first is on the spec sheet. The second you have to check.</p>
 <p>This post is that check, for one specific tool: cuda-oxide.</p>
 <h2>What cuda-oxide is</h2>
 <p>Normally, to write GPU programs you use CUDA C++. It works, but C++ is an old language with sharp edges: easy to make memory mistakes, hard to keep safe.</p>

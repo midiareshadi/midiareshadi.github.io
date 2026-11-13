@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="../../css/style.css?v=9">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <script defer src="../../js/site.js?v=9"></script>
 </head>
 <body>
     <button id="floating-toggle" onclick="toggleSidebar()" title="Show sidebar">
@@ -50,16 +51,12 @@
             </a>
         </div>
     </aside>
-
     <main class="main">
         <article>
             <header class="post-header">
                 <h1>Safe Rust on the GPU, at the PTX level: what cuda-oxide actually emits</h1>
-                <p class="post-meta">June 2026 &middot; ~15 min read &middot;
-                    <a href="https://github.com/midiareshadi/cuda-oxide-ptx">code</a>
-                </p>
+                <p class="post-meta">June 2026 &middot; ~15 min read &middot; <a href="https://github.com/midiareshadi/cuda-oxide-ptx" target="_blank" rel="noopener">code</a></p>
             </header>
-
             <!-- series-nav -->
             <nav class="series-nav" aria-label="Series navigation">
                 <p class="series-title">Rust on the GPU with cuda-oxide <span class="series-count">part 1 of 5</span></p>
@@ -128,7 +125,6 @@
     <img src="../../assets/figures/fig-pipeline.svg" alt="Three compile paths: cuda-oxide, clang, and nvcc, and the backends they share">
     <p class="figure-caption">The three compile paths. cuda-oxide and clang share the upstream LLVM 21 backend, so comparing them isolates the language; clang and nvcc share the language but differ in the backend.</p>
 </div>
-
 <p>I diff at two levels. cuda-oxide writes textual LLVM IR before invoking <code>llc</code>, and clang emits IR with <code>-emit-llvm</code>, so I can compare the IR <em>before</em> the shared backend runs — that's where Rust-specific artifacts (panic paths, address-space handling) live. Then I compare the final PTX and SASS. nvcc's NVVM IR isn't dumpable, so the IR-level diff is cuda-oxide vs clang only; PTX/SASS is all three.</p>
 <p>One methodological detail matters more than it looks. PTX is a virtual ISA; the real register allocation happens in <code>ptxas</code>. To keep the comparison honest I run a <strong>single <code>ptxas</code> binary over all three PTX files</strong> — so any register or SASS difference reflects the PTX, not a difference in ptxas versions. Everything targets <code>sm_89</code> (an L4), <code>-O3</code>, fast-math off.</p>
 <h2>Calibration</h2>
@@ -340,7 +336,6 @@ pub fn vecadd(a: &amp;[f32], b: &amp;[f32], mut c: DisjointSlice&lt;f32&gt;) {
     <img src="../../assets/figures/fig-amortization.svg" alt="PTX instruction count per kernel for cuda-oxide, clang, and nvcc">
     <p class="figure-caption">PTX instruction count per kernel. cuda-oxide is ~2.5x on the tiny kernels but reaches parity with nvcc on the reduction, where the kernel's own work dominates the fixed prologue.</p>
 </div>
-
 <p>Two honest qualifications. First — and this is the one that matters for the claim — the amortization does not depend on dropping safety. The prologue is the same fixed size it was on vecadd; it shrinks only <em>relative to the kernel</em>, because the reduction's own work (the loop, the shared-memory tree, the barrier) now dominates the instruction count. That is the general result. Separately, this particular kernel also happens to skip the per-element write check, because it uses cuda-oxide's <em>unchecked</em> operations — shared-memory indexing, and <code>get_unchecked_mut</code> for the block-indexed write, rather than the checked <code>DisjointSlice</code> path. So the skipped check is a bonus specific to this kernel, not the cause of the parity. Second, parity is a PTX-level result; in SASS, cuda-oxide is still ~17% heavier (56 vs 48), because the residual generic addressing survives into machine code even when the instruction count matches. Which raises the question this whole static exercise has been circling: does any of it actually cost speed?</p>
 <h2>What does the overhead cost?</h2>
 <p>Instruction counts are a proxy, not a measurement. A kernel with 2.5× the PTX can run at exactly the same speed, because GPU performance is usually limited by memory bandwidth or occupancy, not by how many instructions the kernel issues. So I benchmarked all three compilers, on the same L4, with the same data and launch config.</p>
@@ -384,7 +379,6 @@ pub fn vecadd(a: &amp;[f32], b: &amp;[f32], mut c: DisjointSlice&lt;f32&gt;) {
     <img src="../../assets/figures/fig-runtime.svg" alt="cuda-oxide relative to nvcc: large static PTX overhead, near-zero runtime cost">
     <p class="figure-caption">cuda-oxide relative to nvcc. The 2.46x static PTX overhead on vecadd and gather costs essentially nothing at runtime; the only measurable cost is the reduction's few percent, where the PTX is already at parity.</p>
 </div>
-
 <p>The reduction is the one case where the overhead is <em>not</em> fully hidden. cuda-oxide is the slowest and nvcc the fastest, by a few percent. This is the kernel with real compute — a shared-memory tree reduction — so it isn't purely bandwidth-bound (a profile puts it around 80% of the shared-memory pipeline's throughput), and the extra instructions have somewhere to bite. The direction matches the static data: cuda-oxide carried ~17% more SASS, and here it pays a small fraction of that back in time.</p>
 <p>I checked that the gap is real rather than a measurement artifact by reversing the order the compilers run in. The ranking didn't move: cuda-oxide stayed slowest and nvcc fastest even when cuda-oxide ran last. A GPU-clock drift would have flipped with the order; this didn't. The exact size wobbles between runs (roughly three to six percent), so the honest statement is "a few percent," not a single number — but the ranking is stable.</p>
 <p>One more thing the reduction numbers show, almost in passing, and it's worth stating because it's the whole reason this section exists. clang and nvcc emit the <strong>same</strong> number of SASS instructions (48 each), yet clang is about 1% slower, in every run and every order. Same instruction count, different speed. Instruction counting tells you about code <em>size and structure</em>; it does not, by itself, tell you about speed. The static half of this post is a real result about what cuda-oxide emits — but the runtime half is what tells you whether that emitted code costs you anything, and mostly, on this hardware, it doesn't.</p>
@@ -407,22 +401,5 @@ pub fn vecadd(a: &amp;[f32], b: &amp;[f32], mut c: DisjointSlice&lt;f32&gt;) {
             </div>
         </article>
     </main>
-
-    <script>
-    function toggleSidebar() {
-        const sidebar = document.querySelector('.sidebar');
-        const main = document.querySelector('.main');
-        const floatingBtn = document.getElementById('floating-toggle');
-        if (sidebar.style.display === 'none') {
-            sidebar.style.display = 'block';
-            main.style.marginLeft = '260px';
-            floatingBtn.style.display = 'none';
-        } else {
-            sidebar.style.display = 'none';
-            main.style.marginLeft = '2rem';
-            floatingBtn.style.display = 'block';
-        }
-    }
-    </script>
 </body>
 </html>

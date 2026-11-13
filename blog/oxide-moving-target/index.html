@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="../../css/style.css?v=9">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <script defer src="../../js/site.js?v=9"></script>
 </head>
 <body>
     <button id="floating-toggle" onclick="toggleSidebar()" title="Show sidebar">
@@ -50,17 +51,12 @@
             </a>
         </div>
     </aside>
-
     <main class="main">
         <article>
             <header class="post-header">
                 <h1>Benchmarking a moving target: my cuda-oxide results changed in weeks</h1>
-                <p class="post-meta">July 2026 &middot; ~9 min read &middot;
-                    <a href="https://github.com/midiareshadi/oxide-moving-target">code</a> &middot;
-                    <a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>
-                </p>
+                <p class="post-meta">July 2026 &middot; ~9 min read &middot; <a href="https://github.com/midiareshadi/oxide-moving-target" target="_blank" rel="noopener">code</a> &middot; <a href="https://github.com/NVlabs/cuda-oxide/issues/396" target="_blank" rel="noopener">issue #396</a></p>
             </header>
-
             <!-- series-nav -->
             <nav class="series-nav" aria-label="Series navigation">
                 <p class="series-title">Rust on the GPU with cuda-oxide <span class="series-count">part 4 of 5</span></p>
@@ -74,58 +70,48 @@
             </nav>
             <!-- /series-nav -->
             <div class="post-content">
-
 <div style="border-left:3px solid #D97757; padding:0.6rem 0 0.6rem 1rem; margin:0 0 1.5rem 0; background:#fdf6f2;">
-<p style="margin:0;"><em><strong>Update (July 2026) &#8212; the real cause, and the fix.</strong> Within hours of my report, a cuda-oxide developer diagnosed the bug in <a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>, and their explanation corrects part of the story below.</em></p>
-<p style="margin:0.7rem 0 0 0;"><em>An out-of-bounds Rust index becomes a MIR "assert" whose failure branch was translated into LLVM's <code>unreachable</code>. But in LLVM, <code>unreachable</code> does not mean "stop here" &#8212; it means "control can never get here". So when the newer pipeline added an <code>opt -O2</code> step, the optimizer did what that promise allows: it folded the check into <code>llvm.assume(j &lt; len)</code> and deleted the branch. The out-of-bounds read follows.</em></p>
-<p style="margin:0.7rem 0 0 0;"><em>So the check was never lowered correctly. <strong>The older build was not safe by design &#8212; it was safe by accident</strong>, because it had no <code>opt -O2</code> to exploit the mistake. My "a safety check was removed" framing was wrong: the bug was always there, and the optimizer only exposed it.</em></p>
-<p style="margin:0.7rem 0 0 0;"><em>A fix followed the same day and is now merged (<a href="https://github.com/NVlabs/cuda-oxide/pull/405">PR #405</a>, closing issue #396): emit a real <code>trap</code> before the <code>unreachable</code>, so the optimizer cannot delete the check. I verified it on my L4 (sm_89): both bounds guards return to the PTX, each abort path carries a <code>trap</code>, and the out-of-bounds read is gone &#8212; the kernel traps instead.</em></p>
-
-<p style="margin:0.7rem 0 0 0;"><em>Postscript: the same "<code>unreachable</code> on a runtime-reachable path" mistake turned out to exist at a second place in the compiler &#8212; this time on panic calls like <code>.unwrap()</code> on <code>None</code>. That version was worse: no crash, no error, just silent wrong data in the output (the optimizer stored an uninitialized register), and even NVIDIA's memory checker stayed quiet. It was filed as <a href="https://github.com/NVlabs/cuda-oxide/issues/407">issue #407</a> and fixed in <a href="https://github.com/NVlabs/cuda-oxide/pull/408">PR #408</a>, now merged as well. I verified that fix on my L4 too: the kernel now traps instead of returning garbage.</em></p>
-<p style="margin:0.7rem 0 0 0;"><em>I am leaving the original text below unchanged. If anything, this makes the lesson stronger: the older build's safety was luck, not a guarantee &#8212; which is exactly why you should verify safety-critical code generation yourself, every time.</em></p>
+<p style="margin:0;"><em><strong>Update (July 2026) — the real cause, and the fix.</strong> Within hours of my report, a cuda-oxide developer diagnosed the bug in <a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>, and their explanation corrects part of the story below.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>An out-of-bounds Rust index becomes a MIR "assert" whose failure branch was translated into LLVM's <code>unreachable</code>. But in LLVM, <code>unreachable</code> does not mean "stop here" — it means "control can never get here". So when the newer pipeline added an <code>opt -O2</code> step, the optimizer did what that promise allows: it folded the check into <code>llvm.assume(j &lt; len)</code> and deleted the branch. The out-of-bounds read follows.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>So the check was never lowered correctly. <strong>The older build was not safe by design — it was safe by accident</strong>, because it had no <code>opt -O2</code> to exploit the mistake. My "a safety check was removed" framing was wrong: the bug was always there, and the optimizer only exposed it.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>A fix followed the same day and is now merged (<a href="https://github.com/NVlabs/cuda-oxide/pull/405">PR #405</a>, closing issue #396): emit a real <code>trap</code> before the <code>unreachable</code>, so the optimizer cannot delete the check. I verified it on my L4 (sm_89): both bounds guards return to the PTX, each abort path carries a <code>trap</code>, and the out-of-bounds read is gone — the kernel traps instead.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>Postscript: the same "<code>unreachable</code> on a runtime-reachable path" mistake turned out to exist at a second place in the compiler — this time on panic calls like <code>.unwrap()</code> on <code>None</code>. That version was worse: no crash, no error, just silent wrong data in the output (the optimizer stored an uninitialized register), and even NVIDIA's memory checker stayed quiet. It was filed as <a href="https://github.com/NVlabs/cuda-oxide/issues/407">issue #407</a> and fixed in <a href="https://github.com/NVlabs/cuda-oxide/pull/408">PR #408</a>, now merged as well. I verified that fix on my L4 too: the kernel now traps instead of returning garbage.</em></p>
+<p style="margin:0.7rem 0 0 0;"><em>I am leaving the original text below unchanged. If anything, this makes the lesson stronger: the older build's safety was luck, not a guarantee — which is exactly why you should verify safety-critical code generation yourself, every time.</em></p>
 </div>
 
 <h2>The short version</h2>
 <ul>
 <li>A few weeks ago I <a href="../rust-cuda-vs-oxide/index.html">compared cuda-oxide</a> (a Rust-to-GPU compiler) against three other compilers. I wrote down what its GPU code looked like.</li>
 <li>I re-ran the same test recently. <strong>Two of my three findings had changed.</strong> The tool now makes better memory addresses and, for simple kernels, much smaller code.</li>
-<li>But one change was different in kind: <strong>a safety check disappeared.</strong> Code that used to stop a bad array read now reads memory out of bounds instead. I reported this to the project (<a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>) &#8212; it was diagnosed and fixed the same day; see the update note at the top, the real cause is subtler than "a check was removed".</li>
+<li>But one change was different in kind: <strong>a safety check disappeared.</strong> Code that used to stop a bad array read now reads memory out of bounds instead. I reported this to the project (<a href="https://github.com/NVlabs/cuda-oxide/issues/396">issue #396</a>) — it was diagnosed and fixed the same day; see the update note at the top, the real cause is subtler than "a check was removed".</li>
 <li>There is also a trap I did not expect: <strong>the version number does not tell you which compiler you have.</strong> The part that makes the GPU code is downloaded fresh from the latest development branch, not from the version you asked for.</li>
-<li>The lesson: record the exact version of your tools when you measure &#8212; good practice for any benchmark, and especially here, where the version tag does not pin the backend. And re-check your old findings before you trust them.</li>
+<li>The lesson: record the exact version of your tools when you measure — good practice for any benchmark, and especially here, where the version tag does not pin the backend. And re-check your old findings before you trust them.</li>
 </ul>
-
 <h2>Why I re-tested</h2>
-<p>My <a href="../rust-cuda-vs-oxide/index.html">earlier post</a> compared four GPU compilers on three small kernels. cuda-oxide is an early "alpha" project &#8212; it says so itself, and it changes fast. I wanted to see what a newer version did differently. This should have been a simple "old version vs new version" comparison. It was not simple, and that is the story.</p>
-
+<p>My <a href="../rust-cuda-vs-oxide/index.html">earlier post</a> compared four GPU compilers on three small kernels. cuda-oxide is an early "alpha" project — it says so itself, and it changes fast. I wanted to see what a newer version did differently. This should have been a simple "old version vs new version" comparison. It was not simple, and that is the story.</p>
 <h2>The trap: the version tag does not pin the compiler</h2>
 <p>cuda-oxide has two parts:</p>
 <ul>
-<li>The <strong>front part</strong> (<code>cargo-oxide</code>) &#8212; the command you run. This has version numbers, like v0.2.0 and v0.2.1.</li>
-<li>The <strong>back part</strong> (the "backend") &#8212; the part that actually turns Rust into GPU code. This is what matters for my tests.</li>
+<li>The <strong>front part</strong> (<code>cargo-oxide</code>) — the command you run. This has version numbers, like v0.2.0 and v0.2.1.</li>
+<li>The <strong>back part</strong> (the "backend") — the part that actually turns Rust into GPU code. This is what matters for my tests.</li>
 </ul>
-<p>Here is the surprise. When you install a specific version of the front part, it then downloads the back part from the <strong>latest development branch</strong> &#8212; not from the version you picked. I checked this directly: I installed v0.2.0 and, separately, v0.2.1. Both downloaded the <strong>same</strong> back part (the same commit, dated July 4).</p>
-
+<p>Here is the surprise. When you install a specific version of the front part, it then downloads the back part from the <strong>latest development branch</strong> — not from the version you picked. I checked this directly: I installed v0.2.0 and, separately, v0.2.1. Both downloaded the <strong>same</strong> back part (the same commit, dated July 4).</p>
 <div class="figure">
     <img src="../../assets/figures/omt-provenance-trap.svg" alt="Two version tags both fetch the same backend commit from the latest branch">
-    <p class="figure-caption">The front part is version-tagged, but it downloads the back part from the latest branch. So two version tags can give you the same backend &#8212; or different ones on different days.</p>
+    <p class="figure-caption">The front part is version-tagged, but it downloads the back part from the latest branch. So two version tags can give you the same backend — or different ones on different days.</p>
 </div>
-
 <p>So "cuda-oxide v0.2.1" does not tell you which compiler you have. Two people who both install "v0.2.1" on different days can get different GPU code. The only thing that truly identifies the compiler is the <strong>backend commit and its date</strong>.</p>
 <p>This matters for my old post: I never wrote down the backend commit in June. So I cannot say exactly which compiler made my old results. That gap is part of the lesson.</p>
-<p>So in this post I do not say "version 0.2.0" or "version 0.2.1" as the real names, because those tags do not identify the compiler. Instead I name each compiler by its backend commit &#8212; a commit in cuda-oxide's own code repository. I call them the <strong>older build</strong> (commit <code>faea395</code>, released as v0.2.0 on June 5) and the <strong>newer build</strong> (commit <code>29396b7</code>, taken from the development branch on July 4). These commits are the real, exact names.</p>
-
+<p>So in this post I do not say "version 0.2.0" or "version 0.2.1" as the real names, because those tags do not identify the compiler. Instead I name each compiler by its backend commit — a commit in cuda-oxide's own code repository. I call them the <strong>older build</strong> (commit <code>faea395</code>, released as v0.2.0 on June 5) and the <strong>newer build</strong> (commit <code>29396b7</code>, taken from the development branch on July 4). These commits are the real, exact names.</p>
 <h2>What changed on the three kernels</h2>
 <p>I rebuilt all three kernels (vecadd, gather, reduction) on the newer build and compared to the older one.</p>
-
-<p><strong>1. Memory addresses: better everywhere.</strong> In the older build, cuda-oxide used generic memory addresses (a slower, less specific form). In the newer build, all three kernels use global addresses &#8212; the same clear form the C++ compilers use. This is a clear improvement, and it means one of my old findings ("cuda-oxide is the only one using generic addresses") is now out of date.</p>
-<p><strong>2. Code size: mixed.</strong> Two kernels (vecadd, gather) got much smaller &#8212; about 42% fewer instructions. But the reduction kernel got a little bigger. The extra instructions there are one-time loop setup, not the main work, so this is likely fine. So "smaller" is not a simple yes for every kernel.</p>
+<p><strong>1. Memory addresses: better everywhere.</strong> In the older build, cuda-oxide used generic memory addresses (a slower, less specific form). In the newer build, all three kernels use global addresses — the same clear form the C++ compilers use. This is a clear improvement, and it means one of my old findings ("cuda-oxide is the only one using generic addresses") is now out of date.</p>
+<p><strong>2. Code size: mixed.</strong> Two kernels (vecadd, gather) got much smaller — about 42% fewer instructions. But the reduction kernel got a little bigger. The extra instructions there are one-time loop setup, not the main work, so this is likely fine. So "smaller" is not a simple yes for every kernel.</p>
 <p><strong>3. A safety check disappeared.</strong> This is the important one, so it gets its own section.</p>
-
 <div class="figure">
     <img src="../../assets/figures/omt-three-kernels.svg" alt="Table: addressing improved on all three kernels; size mixed; gather bounds check dropped">
     <p class="figure-caption">Older build vs newer build across the three kernels. Addressing improved everywhere; size is mixed; the gather bounds check was dropped.</p>
 </div>
-
 <h2>The safety check that disappeared</h2>
 <p>The gather kernel does <code>out[i] = src[indices[i]]</code>. It reads a position from <code>indices</code>, then uses that number to read from <code>src</code>. The number comes from memory at run time, so the compiler cannot know in advance if it is inside <code>src</code>. In safe Rust, this read must be checked: if the number is too big, the program must not read past the end of the array.</p>
 <p>The older build added this check. If the index was out of range, the GPU thread stopped safely and did not do the bad read.</p>
@@ -133,30 +119,25 @@
 <p>To be sure this was real, I ran a test: I set one index to 1,000,000, into an array with only 1,024 elements. Then I ran the exact same program on both builds, and I checked each with NVIDIA's own memory checker (<code>compute-sanitizer</code>).</p>
 <ul>
 <li><strong>The older build (June, v0.2.0):</strong> the memory checker reported <strong>0 errors</strong>. The bad index was caught; the program was safe.</li>
-<li><strong>The newer build (July, development branch):</strong> the memory checker reported an <strong>invalid read</strong> &#8212; the program read memory about 4 megabytes past the end of the array. NVIDIA's tool confirmed it.</li>
+<li><strong>The newer build (July, development branch):</strong> the memory checker reported an <strong>invalid read</strong> — the program read memory about 4 megabytes past the end of the array. NVIDIA's tool confirmed it.</li>
 </ul>
-
 <div class="figure">
     <img src="../../assets/figures/omt-safety-contrast.svg" alt="Same program: older build 0 errors, newer build invalid out-of-bounds read">
     <p class="figure-caption">The same safe-Rust program with one out-of-range index. The older build guards the access (0 errors); the newer build reads ~4 MB out of bounds (invalid read). Reported as issue #396.</p>
 </div>
-
 <p>Same safe-Rust program. One build is safe. The other reads memory it should not.</p>
-<p>I want to be fair here: cuda-oxide is an early alpha, and moving fast is what an alpha should do. This is not a criticism of the project. But a missing bounds check is worth reporting, so I reported it: <a href="https://github.com/NVlabs/cuda-oxide/issues/396">cuda-oxide issue #396</a>. I also bisected it &#8212; rebuilding old backend commits one by one &#8212; and found the change landed within about a week of the v0.2.0 release.</p>
+<p>I want to be fair here: cuda-oxide is an early alpha, and moving fast is what an alpha should do. This is not a criticism of the project. But a missing bounds check is worth reporting, so I reported it: <a href="https://github.com/NVlabs/cuda-oxide/issues/396">cuda-oxide issue #396</a>. I also bisected it — rebuilding old backend commits one by one — and found the change landed within about a week of the v0.2.0 release.</p>
 <p>A short, honest note: the bounds check on the <em>output</em> slice (a different, "witness" style of access) still works. It is specifically the plain <code>src[index]</code> read that lost its check.</p>
-
 <h2>The lesson</h2>
 <p>Testing an early-stage compiler is like aiming at a moving target. What I learned:</p>
 <ul>
-<li><strong>Record the exact version of your tools when you measure</strong> &#8212; precisely enough to reproduce it. This is good practice for any benchmark. It matters even more for a tool like cuda-oxide, where the version tag does not pin the backend: the part that generates code tracks the latest branch, so "v0.2.1" alone is not a reproducible coordinate.</li>
+<li><strong>Record the exact version of your tools when you measure</strong> — precisely enough to reproduce it. This is good practice for any benchmark. It matters even more for a tool like cuda-oxide, where the version tag does not pin the backend: the part that generates code tracks the latest branch, so "v0.2.1" alone is not a reproducible coordinate.</li>
 <li><strong>Re-check old findings before trusting them.</strong> Two of my three findings changed in a few weeks.</li>
-<li><strong>Watch safety-critical code closely.</strong> A bounds check can appear or disappear between commits. If you rely on it, verify it is still there &#8212; every time.</li>
+<li><strong>Watch safety-critical code closely.</strong> A bounds check can appear or disappear between commits. If you rely on it, verify it is still there — every time.</li>
 </ul>
 <p>None of this is a knock on cuda-oxide. Fast movement is what an alpha should do. The lesson is about how <em>we</em> test and cite fast-moving tools.</p>
-
 <h2>Reproduce it</h2>
 <p>The kernels, the before/after GPU code, the safety test, and both memory-checker logs are in the repo: <a href="https://github.com/midiareshadi/oxide-moving-target">github.com/midiareshadi/oxide-moving-target</a>. The kernels come from my earlier study (<a href="../rust-cuda-vs-oxide/index.html">rust-cuda-vs-oxide</a>); this repo adds the July rebuild and the safety test.</p>
-
             </div>
         </article>
     </main>

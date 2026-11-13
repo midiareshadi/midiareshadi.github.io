@@ -5,7 +5,16 @@
     "tagline": "GPU kernel performance, measured",
     "description": "Independent GPU kernel research. Benchmarks and low-level analysis on NVIDIA and AMD hardware, including the experiments that reject my own hypotheses.",
     "author": "Midia Reshadi",
-    "asset_version": 9
+    "asset_version": 9,
+    "intro": {
+      "text": "I benchmark GPU kernels and write up what the measurements actually show. The posts here are experiments on real hardware, including NVIDIA L4 and T4 and AMD MI300X, down to the PTX, SASS, and hardware-counter level.",
+      "figure": {
+        "src": "assets/figures/gpu_abstract_trim.jpeg",
+        "width": 725,
+        "height": 739,
+        "alt": "Abstract line drawing of a GPU die floorplan: a central compute array flanked by memory blocks"
+      }
+    }
   },
   "series": {
     "cuda-oxide": {
@@ -39,9 +48,39 @@
         "MI300x",
         "LLM"
       ],
-      "read_minutes": null,
-      "repo_url": "https://github.com/midiareshadi/dataflow-bench",
-      "repo_label": "code"
+      "read_minutes": 8,
+      "figures": [
+        {
+          "placeholder": "FIGURE_SPARSE_WINNER_HEATMAP",
+          "src": "sparse_winner_heatmap.png",
+          "caption": "Winning algorithm across all shapes, sparsity levels, and hardware.\n                        Outer-product wins every single case.",
+          "alt": "Winning algorithm heatmap across hardware and sparsity levels"
+        },
+        {
+          "placeholder": "FIGURE_FIG2_SPEEDUP_VS_VENDOR",
+          "src": "fig2_speedup_vs_vendor.png",
+          "caption": "Speedup vs vendor baseline at 90% sparsity.\n                        Outer-product achieves 20-40x speedup across all shapes.",
+          "alt": "Speedup vs vendor baseline at 90% sparsity"
+        },
+        {
+          "placeholder": "FIGURE_FIG6_BANDWIDTH_UTILIZATION",
+          "src": "fig6_bandwidth_utilization.png",
+          "caption": "Mean achieved memory bandwidth per algorithm.\n                        Outer-product achieves 3.3x higher bandwidth than inner/Gustavson on T4,\n                        and 6.7x higher on MI300x.",
+          "alt": "Memory bandwidth utilization per algorithm"
+        },
+        {
+          "placeholder": "FIGURE_DENSE_WINNER_HEATMAP",
+          "src": "dense_winner_heatmap.png",
+          "caption": "Winning dataflow strategy per hardware and shape.\n                        IS wins on MI300x (13/13), WS wins on T4 (11/13).",
+          "alt": "Winning dataflow strategy heatmap"
+        }
+      ],
+      "links": [
+        {
+          "label": "code",
+          "url": "https://github.com/midiareshadi/dataflow-bench"
+        }
+      ]
     },
     {
       "slug": "attn-dsl-bench",
@@ -56,8 +95,32 @@
         "Triton"
       ],
       "read_minutes": 16,
-      "repo_url": "https://github.com/midiareshadi/attn-dsl-bench",
-      "repo_label": "code"
+      "figures": [
+        {
+          "placeholder": "FIGURE_THROUGHPUT_VS_SEQLEN",
+          "src": "throughput_vs_seqlen.png",
+          "caption": "Throughput across the shape grid. Three implementations, five sequence lengths, two head dimensions. AITER leads at every cell; SDPA tracks the Triton baseline closely.",
+          "alt": "Attention forward-pass throughput vs sequence length on MI300X, faceted by head dimension"
+        },
+        {
+          "placeholder": "FIGURE_MFMA_UTIL_VS_SEQLEN",
+          "src": "mfma_util_vs_seqlen.png",
+          "caption": "Matrix-core utilization across the same grid. AITER's 72% at head_dim=128, N=16384 sits more than twice as high as the Triton-lineage kernels' 33\u201334% plateau.",
+          "alt": "MFMA matrix-core utilization vs sequence length on MI300X, faceted by head dimension"
+        },
+        {
+          "placeholder": "FIGURE_THROUGHPUT_VS_MFMA",
+          "src": "throughput_vs_mfma.png",
+          "caption": "Throughput plotted against MFMA utilization for every (implementation, shape) cell. Points fall along a single rising band: high utilization means high throughput, across implementations and across shapes.",
+          "alt": "Throughput versus MFMA utilization scatter across all 30 measured cells"
+        }
+      ],
+      "links": [
+        {
+          "label": "code",
+          "url": "https://github.com/midiareshadi/attn-dsl-bench"
+        }
+      ]
     },
     {
       "slug": "cuda-oxide-ptx",
@@ -72,8 +135,32 @@
         "GPU"
       ],
       "read_minutes": 15,
-      "repo_url": "https://github.com/midiareshadi/cuda-oxide-ptx",
-      "repo_label": "code"
+      "figures": [
+        {
+          "placeholder": "FIGURE_FIG_PIPELINE",
+          "src": "fig-pipeline.svg",
+          "caption": "The three compile paths. cuda-oxide and clang share the upstream LLVM 21 backend, so comparing them isolates the language; clang and nvcc share the language but differ in the backend.",
+          "alt": "Three compile paths: cuda-oxide, clang, and nvcc, and the backends they share"
+        },
+        {
+          "placeholder": "FIGURE_FIG_AMORTIZATION",
+          "src": "fig-amortization.svg",
+          "caption": "PTX instruction count per kernel. cuda-oxide is ~2.5x on the tiny kernels but reaches parity with nvcc on the reduction, where the kernel's own work dominates the fixed prologue.",
+          "alt": "PTX instruction count per kernel for cuda-oxide, clang, and nvcc"
+        },
+        {
+          "placeholder": "FIGURE_FIG_RUNTIME",
+          "src": "fig-runtime.svg",
+          "caption": "cuda-oxide relative to nvcc. The 2.46x static PTX overhead on vecadd and gather costs essentially nothing at runtime; the only measurable cost is the reduction's few percent, where the PTX is already at parity.",
+          "alt": "cuda-oxide relative to nvcc: large static PTX overhead, near-zero runtime cost"
+        }
+      ],
+      "links": [
+        {
+          "label": "code",
+          "url": "https://github.com/midiareshadi/cuda-oxide-ptx"
+        }
+      ]
     },
     {
       "slug": "rust-cuda-vs-oxide",
@@ -88,8 +175,32 @@
         "PTX"
       ],
       "read_minutes": 12,
-      "repo_url": "https://github.com/midiareshadi/rust-cuda-vs-oxide",
-      "repo_label": "code"
+      "figures": [
+        {
+          "placeholder": "FIGURE_RCO_2X2",
+          "src": "rco-2x2.svg",
+          "caption": "The four compilers as a 2\u00d72. Each column shares a backend; each row shares a language. cuda-oxide is highlighted because it is the only cell that uses generic addressing \u2014 a behavior not shared by the other Rust compiler or the other upstream-LLVM compiler.",
+          "alt": "The 2x2 grid: Rust and C++ rows, upstream LLVM and libNVVM columns, with the four compilers cuda-oxide, rust-cuda, clang, nvcc"
+        },
+        {
+          "placeholder": "FIGURE_RCO_GATHER_STATIC",
+          "src": "rco-gather-static.svg",
+          "caption": "gather is the kernel with the largest difference in the emitted code: cuda-oxide emits about 2.5\u00d7 the instructions of the C++ compilers, and rust-cuda adds two bounds-check traps for the data-dependent read. Yet at runtime all four were equal within measurement noise (about 5694 \u00b5s), because this kernel waits on memory.",
+          "alt": "Bar chart of PTX instruction counts for gather: oxide 64, rustcuda 36, clang 25, nvcc 26"
+        },
+        {
+          "placeholder": "FIGURE_RCO_REDUCTION",
+          "src": "rco-reduction.svg",
+          "caption": "reduction median time per launch (locked clock, 50 rounds \u00d7 200 reps). The two C++ compilers are a little faster than the two Rust compilers. Note: the axis starts at 320 \u00b5s to make the small gap visible. The cause is not established, and it is not a pure backend effect \u2014 if it were, the two libNVVM tools (nvcc and rust-cuda) would group together, and they do not.",
+          "alt": "Bar chart of reduction median microseconds per launch: nvcc 337, clang 344, oxide 351, rustcuda 354"
+        }
+      ],
+      "links": [
+        {
+          "label": "code",
+          "url": "https://github.com/midiareshadi/rust-cuda-vs-oxide"
+        }
+      ]
     },
     {
       "slug": "reduction-gap",
@@ -104,8 +215,32 @@
         "performance"
       ],
       "read_minutes": 10,
-      "repo_url": "https://github.com/midiareshadi/reduction-gap",
-      "repo_label": "code"
+      "figures": [
+        {
+          "placeholder": "FIGURE_RG_LOOP_DIFF",
+          "src": "rg-loop-diff.svg",
+          "caption": "One round of the tree loop, instruction by instruction. The three extras in rust-cuda (orange) are the upper halves of 64-bit operations: a compare, a shift, and the loop test. The listing is simplified for readability; order and pairing follow the committed SASS.",
+          "alt": "The reduction tree loop instruction by instruction: nvcc 10 instructions, rust-cuda 13, with the three extras highlighted as upper halves of 64-bit operations"
+        },
+        {
+          "placeholder": "FIGURE_RG_SASS_COUNTS",
+          "src": "rg-sass-counts.svg",
+          "caption": "Whole-kernel SASS instruction counts. The C++ versions are unchanged between the two groups; only the Rust loop index changed. After the change: exact parity, 48 across the board.",
+          "alt": "SASS instruction totals before and after: 48/48/56/56 becomes 48/48/48/48"
+        },
+        {
+          "placeholder": "FIGURE_RG_RUNTIME",
+          "src": "rg-runtime.svg",
+          "caption": "Median time per launch, before and after. Note: the axis starts at 310 \u00b5s to make the small gap visible. Before the change, both Rust versions are last; after it, both are first \u2014 within the run-to-run noise of nvcc, so the honest statement is \"the gap is gone\", not \"Rust is now faster\".",
+          "alt": "Runtime bars before and after: Rust versions go from last to first"
+        }
+      ],
+      "links": [
+        {
+          "label": "code",
+          "url": "https://github.com/midiareshadi/reduction-gap"
+        }
+      ]
     },
     {
       "slug": "oxide-moving-target",
@@ -120,8 +255,36 @@
         "reproducibility"
       ],
       "read_minutes": 9,
-      "repo_url": "https://github.com/midiareshadi/oxide-moving-target",
-      "repo_label": "code"
+      "figures": [
+        {
+          "placeholder": "FIGURE_OMT_PROVENANCE_TRAP",
+          "src": "omt-provenance-trap.svg",
+          "caption": "The front part is version-tagged, but it downloads the back part from the latest branch. So two version tags can give you the same backend \u2014 or different ones on different days.",
+          "alt": "Two version tags both fetch the same backend commit from the latest branch"
+        },
+        {
+          "placeholder": "FIGURE_OMT_THREE_KERNELS",
+          "src": "omt-three-kernels.svg",
+          "caption": "Older build vs newer build across the three kernels. Addressing improved everywhere; size is mixed; the gather bounds check was dropped.",
+          "alt": "Table: addressing improved on all three kernels; size mixed; gather bounds check dropped"
+        },
+        {
+          "placeholder": "FIGURE_OMT_SAFETY_CONTRAST",
+          "src": "omt-safety-contrast.svg",
+          "caption": "The same safe-Rust program with one out-of-range index. The older build guards the access (0 errors); the newer build reads ~4 MB out of bounds (invalid read). Reported as issue #396.",
+          "alt": "Same program: older build 0 errors, newer build invalid out-of-bounds read"
+        }
+      ],
+      "links": [
+        {
+          "label": "code",
+          "url": "https://github.com/midiareshadi/oxide-moving-target"
+        },
+        {
+          "label": "issue #396",
+          "url": "https://github.com/NVlabs/cuda-oxide/issues/396"
+        }
+      ]
     },
     {
       "slug": "softmax-cache-mirage",
@@ -136,8 +299,32 @@
         "MI300X"
       ],
       "read_minutes": 10,
-      "repo_url": "https://github.com/midiareshadi/kernel-curiosity",
-      "repo_label": "code"
+      "figures": [
+        {
+          "placeholder": "FIGURE_1",
+          "src": "sm-spec-vs-measured.svg",
+          "caption": "Spec-sheet bandwidth against what a plain copy actually reaches, on both GPUs.",
+          "alt": "Spec-sheet bandwidth against what a plain copy actually reaches, on both GPUs."
+        },
+        {
+          "placeholder": "FIGURE_2",
+          "src": "sm-cache-mirage.svg",
+          "caption": "Percentage of measured peak bandwidth against tensor size. In the shaded region the data fits in cache, so the numbers describe the cache and can pass 100%. Once the data spills cache, the two kernels agree.",
+          "alt": "Percentage of measured peak bandwidth against tensor size. In the shaded region the data fits in cache, so the numbers describe the cache and can pass 100%. Once the data spills cache, the two kernels agree."
+        },
+        {
+          "placeholder": "FIGURE_3",
+          "src": "sm-two-gpus.svg",
+          "caption": "The same simple kernel on both GPUs. Past each dotted line the data no longer fits that GPU's cache. The L4 reaches its limit; the MI300X flattens at about half of its own.",
+          "alt": "The same simple kernel on both GPUs. Past each dotted line the data no longer fits that GPU's cache. The L4 reaches its limit; the MI300X flattens at about half of its own."
+        }
+      ],
+      "links": [
+        {
+          "label": "code",
+          "url": "https://github.com/midiareshadi/kernel-curiosity"
+        }
+      ]
     },
     {
       "slug": "cache-cliff",
@@ -152,8 +339,26 @@
         "L4"
       ],
       "read_minutes": 8,
-      "repo_url": "https://github.com/midiareshadi/kernel-curiosity",
-      "repo_label": "code"
+      "figures": [
+        {
+          "placeholder": "FIGURE_CONCEPT",
+          "src": "cc-concept.svg",
+          "caption": "The cache as a fixed box. Read-write must hold input and output together, so input can only reach about half the cache before it overflows. Read-only holds input alone, so input can reach the whole cache \u2014 and the cliff moves to twice the size.",
+          "alt": "The cache as a fixed box. Read-write must hold input and output together, so input can only reach about half the cache before it overflows. Read-only holds input alone, so input can reach the whole cache \u2014 and the cliff moves to twice the size."
+        },
+        {
+          "placeholder": "FIGURE_DATA",
+          "src": "cc-rw-vs-ro.svg",
+          "caption": "Input bandwidth as a percentage of measured peak, against input size. The read-write kernel cliffs at about 27 MB; the read-only kernel stays fast until about 55 MB \u2014 almost exactly double, because removing the output frees half the cache.",
+          "alt": "Input bandwidth as a percentage of measured peak, against input size. The read-write kernel cliffs at about 27 MB; the read-only kernel stays fast until about 55 MB \u2014 almost exactly double, because removing the output frees half the cache."
+        }
+      ],
+      "links": [
+        {
+          "label": "code",
+          "url": "https://github.com/midiareshadi/kernel-curiosity"
+        }
+      ]
     },
     {
       "slug": "fp8-ada",
@@ -168,8 +373,20 @@
         "Ada"
       ],
       "read_minutes": 9,
-      "repo_url": "https://github.com/NVlabs/cuda-oxide",
-      "repo_label": "cuda-oxide"
+      "figures": [
+        {
+          "placeholder": "FIGURE_FRAGMENT",
+          "src": "fp8-fragment-layout.svg",
+          "caption": "A simplified picture of the idea: the matrix is split across all 32 threads of a group, each holding specific cells. The real pattern is more intricate, but the point is the same: every piece must land in exactly the right place, or the result is wrong.",
+          "alt": "A simplified picture of the idea: the matrix is split across all 32 threads of a group, each holding specific cells. The real pattern is more intricate, but the point is the same: every piece must land in exactly the right place, or the result is wrong."
+        }
+      ],
+      "links": [
+        {
+          "label": "cuda-oxide",
+          "url": "https://github.com/NVlabs/cuda-oxide"
+        }
+      ]
     }
   ]
 }

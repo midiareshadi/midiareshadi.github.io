@@ -60,6 +60,7 @@ def render_head(data, post=None, prefix=""):
         f'    <link rel="stylesheet" href="{prefix}css/style.css?v={v}">',
         '    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700'
         '&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">',
+        f'    <script defer src="{prefix}js/site.js?v={v}"></script>',
         "</head>",
     ]
     return "\n".join(lines)
@@ -219,3 +220,99 @@ def render_feed(data):
         out.append("    </item>")
     out += ["  </channel>", "</rss>"]
     return "\n".join(out) + "\n"
+
+
+# --------------------------------------------------------------------------
+# whole pages
+# --------------------------------------------------------------------------
+
+FIG_TMPL = ('<div class="figure">\n'
+            '    <img src="{prefix}assets/figures/{src}" alt="{alt}">\n'
+            '    <p class="figure-caption">{caption}</p>\n'
+            "</div>")
+
+
+def render_body(md_text, figures, prefix="../../"):
+    """Markdown source -> post body HTML, with figure placeholders expanded."""
+    import markdown
+    lines = md_text.splitlines()
+    if not lines or not lines[0].startswith("# "):
+        raise ValueError("a post source must start with an H1 title")
+    title = lines[0][2:].strip()
+    body = "\n".join(lines[1:]).lstrip("\n")
+    html = markdown.markdown(body, extensions=["tables", "fenced_code"])
+    for f in figures:
+        block = FIG_TMPL.format(prefix=prefix, src=f["src"],
+                                alt=f.get("alt") or f["caption"],
+                                caption=f["caption"])
+        html = html.replace(f'<p>{f["placeholder"]}</p>', block)
+        html = html.replace(f["placeholder"], block)
+    return title, html
+
+
+def _meta_line(post):
+    bits = [escape(post["date_label"])]
+    if post.get("read_minutes"):
+        bits.append(f'~{post["read_minutes"]} min read')
+    for link in post.get("links", []):
+        bits.append(f'<a href="{link["url"]}" target="_blank" rel="noopener">'
+                    f'{escape(link["label"])}</a>')
+    return " &middot; ".join(bits)
+
+
+def render_post_page(data, post, md_text):
+    prefix = "../../"
+    title, body = render_body(md_text, post.get("figures", []), prefix)
+    nav = render_series_nav(data, post, prefix)
+    return "\n".join([
+        "<!DOCTYPE html>",
+        '<html lang="en">',
+        render_head(data, post, prefix),
+        "<body>",
+        render_sidebar(data, prefix),
+        '    <main class="main">',
+        "        <article>",
+        '            <header class="post-header">',
+        f"                <h1>{escape(title)}</h1>",
+        f'                <p class="post-meta">{_meta_line(post)}</p>',
+        "            </header>",
+        *([nav] if nav else []),
+        '            <div class="post-content">',
+        body,
+        "            </div>",
+        "        </article>",
+        "    </main>",
+        "</body>",
+        "</html>",
+        "",
+    ])
+
+
+def render_homepage(data):
+    site = data["site"]
+    intro = site.get("intro", {})
+    fig = intro.get("figure")
+    img = ""
+    if fig:
+        img = (f'\n      <img class="gpu-mark" src="{fig["src"]}"'
+               f' width="{fig["width"]}" height="{fig["height"]}"\n'
+               f'           alt="{escape(fig["alt"], quote=True)}">')
+    return "\n".join([
+        "<!DOCTYPE html>",
+        '<html lang="en">',
+        render_head(data, None, ""),
+        "<body>",
+        render_sidebar(data, ""),
+        '    <main class="main">',
+        '    <p id="filter-bar"></p>',
+        '    <div class="intro-row">',
+        '      <div class="intro">',
+        f'        <p>{escape(intro.get("text", ""))}</p>',
+        "      </div>" + img,
+        "    </div>",
+        render_post_list(data),
+        "    </main>",
+        "</body>",
+        "</html>",
+        "",
+    ])
