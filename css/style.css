@@ -12,6 +12,7 @@ body {
     background: #faf8f3;
     display: flex;
     min-height: 100vh;
+    padding-left: 260px;          /* clear the fixed sidebar */
 }
 
 /* Sidebar */
@@ -85,9 +86,9 @@ body {
 
 /* Main content */
 .main {
-    margin-left: 260px;
-    padding: 2.5rem 3rem;
-    max-width: 720px;
+    margin: 0 auto;
+    padding: 2.5rem calc(3rem + 328px) 2.5rem 3rem;
+    max-width: calc(720px + 328px);
     width: 100%;
     background: #faf8f3;
 }
@@ -289,7 +290,7 @@ tr:last-child td {
 }
 
 @media (max-width: 768px) {
-    body { flex-direction: column; }
+    body { flex-direction: column; padding-left: 0; }
     .sidebar {
         position: relative;
         width: 100%;
@@ -299,7 +300,7 @@ tr:last-child td {
         padding: 1.5rem;
     }
     .main {
-        margin-left: 0;
+        max-width: 100%;
         padding: 1.5rem;
     }
 }
@@ -360,11 +361,7 @@ tr:last-child td {
     cursor: pointer;
 }
 
-.main.sidebar-hidden { margin-left: 2rem; }
-
-@media (max-width: 768px) {
-    .main.sidebar-hidden { margin-left: 0; }
-}
+body.sidebar-collapsed { padding-left: 0; }
 
 /* --- homepage GPU mark --- */
 .intro-row {
@@ -382,6 +379,10 @@ tr:last-child td {
 }
 
 @media (max-width: 1260px) {
+    .main {
+        max-width: 720px;
+        padding-right: 3rem;
+    }
     .intro-row {
         display: flex;
         gap: 1.25rem;

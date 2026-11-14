@@ -5,7 +5,7 @@
     "tagline": "GPU kernel performance, measured",
     "description": "Independent GPU kernel research. Benchmarks and low-level analysis on NVIDIA and AMD hardware, including the experiments that reject my own hypotheses.",
     "author": "Midia Reshadi",
-    "asset_version": 9,
+    "asset_version": 10,
     "intro": {
       "text": "I benchmark GPU kernels and write up what the measurements actually show. The posts here are experiments on real hardware, including NVIDIA L4 and T4 and AMD MI300X, down to the PTX, SASS, and hardware-counter level.",
       "figure": {

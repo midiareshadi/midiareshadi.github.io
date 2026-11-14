@@ -3,15 +3,14 @@
 
 function toggleSidebar() {
         const sidebar = document.querySelector('.sidebar');
-        const main = document.querySelector('.main');
         const floatingBtn = document.getElementById('floating-toggle');
         if (sidebar.style.display === 'none') {
             sidebar.style.display = 'block';
-            main.classList.remove('sidebar-hidden');
+            document.body.classList.remove('sidebar-collapsed');
             floatingBtn.style.display = 'none';
         } else {
             sidebar.style.display = 'none';
-            main.classList.add('sidebar-hidden');
+            document.body.classList.add('sidebar-collapsed');
             floatingBtn.style.display = 'block';
         }
     }
