@@ -301,7 +301,7 @@ def render_homepage(data):
         "<!DOCTYPE html>",
         '<html lang="en">',
         render_head(data, None, ""),
-        "<body>",
+        '<body class="home">',
         render_sidebar(data, ""),
         '    <main class="main">',
         '    <p id="filter-bar"></p>',

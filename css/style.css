@@ -87,10 +87,17 @@ body {
 /* Main content */
 .main {
     margin: 0 auto;
-    padding: 2.5rem calc(3rem + 328px) 2.5rem 3rem;
-    max-width: calc(720px + 328px);
+    padding: 2.5rem 3rem;
+    max-width: 800px;
     width: 100%;
     background: #faf8f3;
+}
+
+/* Only the homepage has a figure in the right margin, so only the homepage
+   reserves room for it. Text and figure then centre as one block. */
+body.home .main {
+    padding-right: calc(3rem + 328px);
+    max-width: calc(800px + 328px);
 }
 
 /* Home page */
@@ -379,8 +386,8 @@ body.sidebar-collapsed { padding-left: 0; }
 }
 
 @media (max-width: 1260px) {
-    .main {
-        max-width: 720px;
+    body.home .main {
+        max-width: 800px;
         padding-right: 3rem;
     }
     .intro-row {
