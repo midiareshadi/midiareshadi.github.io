@@ -108,7 +108,17 @@ def render_sidebar(data, prefix=""):
                    'class="sidebar-icon">' + ICONS[key] + "</svg>")
         out.append(f"                {escape(label)}")
         out.append("            </a>")
-    out += ["        </div>", "    </aside>"]
+    out += ["        </div>"]
+    fig = site.get("sidebar_figure")
+    if fig:
+        out += [
+            '        <div class="sidebar-figure">',
+            f'            <img src="{prefix}{fig["src"]}" width="{fig["width"]}"'
+            f' height="{fig["height"]}"',
+            f'                 alt="{escape(fig["alt"], quote=True)}">',
+            "        </div>",
+        ]
+    out += ["    </aside>"]
     return "\n".join(out)
 
 
