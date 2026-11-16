@@ -65,9 +65,9 @@ FIGURE_FIG2_SPEEDUP_VS_VENDOR
 
 ### Sparsity sensitivity
 
-Higher sparsity amplifies the advantage. At 70% sparsity,
+Higher sparsity narrows the advantage. At 70% sparsity,
                     outer-product achieves a mean 73x speedup over vendor. At 95%,
-                    this narrows to 15x — still very significant.
+                    that falls to 15x — still substantial.
 
 | Sparsity | T4 mean speedup | MI300x mean speedup |
 | --- | --- | --- |
@@ -110,7 +110,7 @@ This maps directly to `tl.dot()` in Triton, which compiles
 Inner-product and Gustavson both require gather operations — loading
                     specific rows of B indexed by sparse column indices of A. This produces
                     scattered memory loads that cannot leverage Tensor Cores efficiently,
-                    resulting in 3x lower bandwidth utilization.
+                    resulting in 3-7x lower bandwidth utilization.
 
 Vendor libraries (cuSPARSE/rocSPARSE) use CSR format and process only
                     non-zeros — but cannot utilize Tensor Cores for sparse operations,
@@ -119,7 +119,7 @@ Vendor libraries (cuSPARSE/rocSPARSE) use CSR format and process only
 <div class="finding-box">
 <p><strong>Key insight:</strong> For top-k attention sparsity, outer-product's
                     regular tiling pattern enables Tensor Core utilization — achieving 3-7x
-                    higher memory bandwidth than gather-based algorithms and 35-140x higher
+                    higher memory bandwidth than gather-based algorithms and 38-76x higher
                     than vendor CSR kernels.</p>
 </div>
 
